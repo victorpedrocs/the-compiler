@@ -1,0 +1,25 @@
+for 1:10
+{
+	i++;
+	i=0;
+}
+
+while
+{
+	...  # continue
+	</> # break 
+}
+
+tipox: integer float string character
+=			comparacao
+<<			atribuicao
+# 			comentario
+
+##
+bloco de comentario
+##
+
+palavras reservadas:
+		include, constant (a.k.a "define"), 
+
+
