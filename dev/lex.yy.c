@@ -392,7 +392,7 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    2,    1,    1,    1,    1,    1,    1,    1,    4,
         4,    5,    5,    4,    5,    1,    5,    6,    6,    6,
         6,    6,    6,    6,    6,    6,    6,    1,    4,    1,
-        1,    1,    1,    1,    7,    7,    7,    7,    7,    7,
+        5,    1,    1,    1,    7,    7,    7,    7,    7,    7,
         7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
         7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
         4,    1,    4,    1,    7,    1,    8,    7,    7,    7,
@@ -764,7 +764,7 @@ YY_RULE_SETUP
 case 4:
 YY_RULE_SETUP
 #line 24 "lexica.l"
-{return TK_TIPO_INT;}
+{yylval.traducao = yytext; return TK_TIPO_INT;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
