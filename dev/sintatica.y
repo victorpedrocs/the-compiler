@@ -29,7 +29,7 @@ string getID(void);
 %}
 
 %token TK_NUM
-%token TK_MAIN TK_ID TK_TIPO_INT
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_FLOAT TK_TIPO_STRING TK_TIPO_BOOL
 %token TK_FIM TK_ERROR
 
 %start S
@@ -39,6 +39,7 @@ string getID(void);
 
 
 %%
+
 
 S 			: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
 			{
@@ -56,6 +57,7 @@ COMANDOS	: COMANDO COMANDOS
 			{
 				$$.traducao = $1.traducao + $2.traducao;
 			}
+			
 			|
 			{
 				$$.traducao = "";
@@ -64,12 +66,18 @@ COMANDOS	: COMANDO COMANDOS
 
 COMANDO 	: E ';'
 
-            | TK_TIPO_INT TK_ID ';'
+            | TIPO TK_ID ';'
             {
                 string nome_temp = getID();
-                //tab_variaveis.insert(pair<string, struct variavel>($2.variavel, {nome_temp, $1.traducao}));
                 tab_variaveis[$2.variavel] = {nome_temp, $1.traducao};
                 $$.traducao = "\t" + $1.traducao + " " + nome_temp + ";\n";
+            }
+            
+            | TIPO TK_ID '=' E ';'
+            {
+                string nome_temp = getID();
+                tab_variaveis[$2.variavel] = {nome_temp, $1.traducao};
+                $$.traducao = $4. traducao + "\t" + $1.traducao + " " + nome_temp + ";\n\t" + nome_temp + " = " + $4.variavel + ";\n";
             };
 
 E 			: '('E')' 
@@ -120,6 +128,8 @@ E 			: '('E')'
 				$$.variavel = tab_variaveis[$1.variavel].nome;
 			}
 			;
+			
+TIPO		: TK_TIPO_INT | TK_TIPO_FLOAT | TK_TIPO_STRING | TK_TIPO_BOOL;
 
 %%
 
@@ -146,6 +156,8 @@ string getID()
 
 	stringstream ss;
 	ss << "temp" << i++;
+	
+	//cout << "int " << ss.str() << endl;
 	
 	return ss.str();
 }

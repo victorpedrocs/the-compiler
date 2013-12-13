@@ -1,8 +1,4 @@
 int main()
 {
-	int a;
-	a = 0;
-	
-	int c;
-	a = c + 22 * 4;
+	int i = 0;
 }

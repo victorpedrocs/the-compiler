@@ -41,8 +41,11 @@
      TK_MAIN = 259,
      TK_ID = 260,
      TK_TIPO_INT = 261,
-     TK_FIM = 262,
-     TK_ERROR = 263
+     TK_TIPO_FLOAT = 262,
+     TK_TIPO_STRING = 263,
+     TK_TIPO_BOOL = 264,
+     TK_FIM = 265,
+     TK_ERROR = 266
    };
 #endif
 /* Tokens.  */
@@ -50,8 +53,11 @@
 #define TK_MAIN 259
 #define TK_ID 260
 #define TK_TIPO_INT 261
-#define TK_FIM 262
-#define TK_ERROR 263
+#define TK_TIPO_FLOAT 262
+#define TK_TIPO_STRING 263
+#define TK_TIPO_BOOL 264
+#define TK_FIM 265
+#define TK_ERROR 266
 
 
 

@@ -22,6 +22,9 @@ ID {LETRA}({LETRA}|{NUM})*
 "main"		{return TK_MAIN;}
 
 "int"		{yylval.traducao = yytext; return TK_TIPO_INT;}
+"float"		{yylval.traducao = yytext; return TK_TIPO_FLOAT;}
+"int"		{yylval.traducao = yytext; return TK_TIPO_STRING;}
+"boolean"	{yylval.traducao = yytext; return TK_TIPO_BOOL;}
 
 [(){}[\];,]	{ return *yytext; }
 
