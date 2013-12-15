@@ -22,17 +22,18 @@ ID {LETRA}({LETRA}|{NUM})*
 "main"		{return TK_MAIN;}
 
 "int"		{yylval.traducao = yytext; return TK_TIPO_INT;}
-"float"		{yylval.traducao = yytext; return TK_TIPO_FLOAT;}
-"int"		{yylval.traducao = yytext; return TK_TIPO_STRING;}
+"float"		{yylval.traducao = yytext; return TK_TIPO_REAL;}
+"string"	{yylval.traducao = yytext; return TK_TIPO_STRING;}
 "boolean"	{yylval.traducao = yytext; return TK_TIPO_BOOL;}
 
 [(){}[\];,]	{ return *yytext; }
 
-[+\-*/=]		{ return *yytext; }
+[+\-*/=]	{ return *yytext; }
 
 {NUM}		{ yylval.traducao = yytext; return TK_NUM; }
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
+{REAL}		{ yylval.traducao = yytext; return TK_REAL; }
 
-.			{ *yytext; }
+.		{ *yytext; }
 
 %%

@@ -14,12 +14,14 @@ struct atributos
 	string traducao;
 	string variavel;
 };
+
 struct variavel
 {
     string nome, tipo;
 };
 
 map<string, struct variavel> tab_variaveis;
+string declaracoes_temp = "";
 
 int yylex(void);
 void yyerror(string);
@@ -28,8 +30,8 @@ string getID(void);
 
 %}
 
-%token TK_NUM
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_FLOAT TK_TIPO_STRING TK_TIPO_BOOL
+%token TK_NUM TK_REAL
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_STRING TK_TIPO_BOOL
 %token TK_FIM TK_ERROR
 
 %start S
@@ -68,16 +70,16 @@ COMANDO 	: E ';'
 
             | TIPO TK_ID ';'
             {
-                string nome_temp = getID();
-                tab_variaveis[$2.variavel] = {nome_temp, $1.traducao};
-                $$.traducao = "\t" + $1.traducao + " " + nome_temp + ";\n";
+                //string nome_temp = getID();
+                tab_variaveis[$2.variavel] = {getID(), $1.traducao};
+                $$.traducao = "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n";
             }
             
             | TIPO TK_ID '=' E ';'
             {
-                string nome_temp = getID();
-                tab_variaveis[$2.variavel] = {nome_temp, $1.traducao};
-                $$.traducao = $4. traducao + "\t" + $1.traducao + " " + nome_temp + ";\n\t" + nome_temp + " = " + $4.variavel + ";\n";
+                //string nome_temp = getID();
+                tab_variaveis[$2.variavel] = {getID(), $1.traducao};
+                $$.traducao = $4. traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
             };
 
 E 			: '('E')' 
@@ -113,7 +115,13 @@ E 			: '('E')'
 			| TK_NUM
 			{
 				$$.variavel = getID();
-				$$.traducao = "\t"+ $$.variavel + " = " + $1.traducao + ";\n";
+				$$.traducao = "\tint "+ $$.variavel + " = " + $1.traducao + ";\n";
+			}
+			
+			| TK_REAL
+			{
+				$$.variavel = getID();
+				$$.traducao = "\tfloat "+ $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
 			| TK_ID '=' E
@@ -129,7 +137,7 @@ E 			: '('E')'
 			}
 			;
 			
-TIPO		: TK_TIPO_INT | TK_TIPO_FLOAT | TK_TIPO_STRING | TK_TIPO_BOOL;
+TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_STRING | TK_TIPO_BOOL;
 
 %%
 
@@ -156,7 +164,7 @@ string getID()
 
 	stringstream ss;
 	ss << "temp" << i++;
-	
+
 	//cout << "int " << ss.str() << endl;
 	
 	return ss.str();

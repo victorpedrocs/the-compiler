@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 2.5.  */
+/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
 
 /* Bison interface for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989-1990, 2000-2011 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,6 +30,15 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+#ifndef YY_YY_Y_TAB_H_INCLUDED
+# define YY_YY_Y_TAB_H_INCLUDED
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+#if YYDEBUG
+extern int yydebug;
+#endif
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -38,27 +47,28 @@
       know about them.  */
    enum yytokentype {
      TK_NUM = 258,
-     TK_MAIN = 259,
-     TK_ID = 260,
-     TK_TIPO_INT = 261,
-     TK_TIPO_FLOAT = 262,
-     TK_TIPO_STRING = 263,
-     TK_TIPO_BOOL = 264,
-     TK_FIM = 265,
-     TK_ERROR = 266
+     TK_REAL = 259,
+     TK_MAIN = 260,
+     TK_ID = 261,
+     TK_TIPO_INT = 262,
+     TK_TIPO_REAL = 263,
+     TK_TIPO_STRING = 264,
+     TK_TIPO_BOOL = 265,
+     TK_FIM = 266,
+     TK_ERROR = 267
    };
 #endif
 /* Tokens.  */
 #define TK_NUM 258
-#define TK_MAIN 259
-#define TK_ID 260
-#define TK_TIPO_INT 261
-#define TK_TIPO_FLOAT 262
-#define TK_TIPO_STRING 263
-#define TK_TIPO_BOOL 264
-#define TK_FIM 265
-#define TK_ERROR 266
-
+#define TK_REAL 259
+#define TK_MAIN 260
+#define TK_ID 261
+#define TK_TIPO_INT 262
+#define TK_TIPO_REAL 263
+#define TK_TIPO_STRING 264
+#define TK_TIPO_BOOL 265
+#define TK_FIM 266
+#define TK_ERROR 267
 
 
 
@@ -71,4 +81,18 @@ typedef int YYSTYPE;
 
 extern YYSTYPE yylval;
 
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void *YYPARSE_PARAM);
+#else
+int yyparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int yyparse (void);
+#else
+int yyparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
 
+#endif /* !YY_YY_Y_TAB_H_INCLUDED  */
