@@ -11,8 +11,7 @@ using namespace std;
 
 struct atributos
 {
-	string traducao;
-	string variavel;
+	string traducao, variavel, tipo;
 };
 
 struct variavel
@@ -26,18 +25,19 @@ string declaracoes_temp = "";
 int yylex(void);
 void yyerror(string);
 string getID(void);
+string getTipo(string, string);
 
 
 %}
 
-%token TK_NUM TK_REAL
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_STRING TK_TIPO_BOOL
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL
 %token TK_FIM TK_ERROR
 
 %start S
 
-%left '+''-'
-%left '*''/'
+%left TK_SOMA_SUB
+%left TK_MULT_DIV
 
 
 %%
@@ -70,14 +70,12 @@ COMANDO 	: E ';'
 
             | TIPO TK_ID ';'
             {
-                //string nome_temp = getID();
                 tab_variaveis[$2.variavel] = {getID(), $1.traducao};
                 $$.traducao = "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n";
             }
             
             | TIPO TK_ID '=' E ';'
             {
-                //string nome_temp = getID();
                 tab_variaveis[$2.variavel] = {getID(), $1.traducao};
                 $$.traducao = $4. traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
             };
@@ -88,15 +86,39 @@ E 			: '('E')'
 				$$.traducao = $2.traducao;
 			}
 			
-			| E '+' E
+			| E OPERADOR E
 			{	
 				$$.variavel = getID();
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " + " + $3.variavel + ";\n";
+				
+				string tipo = getTipo($1.tipo, $3.tipo);
+				
+				if($1.tipo != $3.tipo)
+				{
+					tipo = getTipo($1.tipo, $3.tipo);
+
+					string temp_cast = getID();
+					
+					if($1.tipo != tipo)
+					{
+						$1.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $1.variavel + ";\n";
+						$1.variavel = temp_cast;
+					}
+					else
+					{
+						$3.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $3.variavel + ";\n";
+						$3.variavel = temp_cast;
+					}
+				}
+				
+				$$.tipo = tipo;
+				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.tipo + " " + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
+			/*
 			| E '-' E
 			{	
 				$$.variavel = getID();
+				
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " - " + $3.variavel + ";\n";
 			}
 			
@@ -111,18 +133,27 @@ E 			: '('E')'
 				$$.variavel = getID();
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " / " + $3.variavel + ";\n";
 			}
+			*/
 			
+			| VALOR
+			{
+				$$.variavel = getID();
+				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
+			}
+				
+			/*
 			| TK_NUM
 			{
 				$$.variavel = getID();
-				$$.traducao = "\tint "+ $$.variavel + " = " + $1.traducao + ";\n";
+				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
 			| TK_REAL
 			{
 				$$.variavel = getID();
-				$$.traducao = "\tfloat "+ $$.variavel + " = " + $1.traducao + ";\n";
+				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
 			}
+			*/
 			
 			| TK_ID '=' E
 			{
@@ -137,7 +168,11 @@ E 			: '('E')'
 			}
 			;
 			
-TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_STRING | TK_TIPO_BOOL;
+TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL;
+
+VALOR		: TK_NUM | TK_REAL | TK_CHAR | TK_STRING | TK_BOOL;
+
+OPERADOR	: TK_SOMA_SUB | TK_MULT_DIV;
 
 %%
 
@@ -168,4 +203,14 @@ string getID()
 	//cout << "int " << ss.str() << endl;
 	
 	return ss.str();
+}
+
+
+//@TODO: Tabela de conversoes
+string getTipo(string var1, string var2)
+{
+	if (var1 == "int" && var2 == "int")
+		return "int";
+	else
+		return "float";
 }
