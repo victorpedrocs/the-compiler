@@ -19,14 +19,14 @@ struct variavel
     string nome, tipo;
 };
 
-map<string, struct variavel> tab_variaveis;
-string declaracoes_temp = "";
-
 int yylex(void);
 void yyerror(string);
 string getID(void);
-string getTipo(string, string);
+string getTipo(string, string, string);
+map<string, string> cria_tabela_tipos();
 
+map<string, struct variavel> tab_variaveis;
+map<string, string> tab_tipos = cria_tabela_tipos();
 
 %}
 
@@ -90,23 +90,23 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				
-				string tipo = getTipo($1.tipo, $3.tipo);
+				string tipo = getTipo($1.tipo, $2.traducao, $3.tipo);
 				
 				if($1.tipo != $3.tipo)
 				{
-					tipo = getTipo($1.tipo, $3.tipo);
-
 					string temp_cast = getID();
 					
 					if($1.tipo != tipo)
 					{
 						$1.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
+						$1.tipo = tipo;
 					}
 					else
 					{
 						$3.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
+						$3.tipo = tipo;
 					}
 				}
 				
@@ -207,10 +207,48 @@ string getID()
 
 
 //@TODO: Tabela de conversoes
-string getTipo(string var1, string var2)
+string getTipo(string var1, string op, string var2)
 {
-	if (var1 == "int" && var2 == "int")
-		return "int";
-	else
-		return "float";
+    string tipo_retorno = "";
+    
+    tipo_retorno = tab_tipos[var1+op+var2];
+    if(tipo_retorno != "")    
+		return tipo_retorno;
+		
+	tipo_retorno = tab_tipos[var2+op+var1];
+	if(tipo_retorno != "")
+		return tipo_retorno;
+	
+	perror("ERRO: Tipos incompativeis");
+	exit(EXIT_FAILURE);
+}
+
+map<string, string> cria_tabela_tipos()
+{
+    map<string, string> tabela_tipos;
+    tabela_tipos["int+int"] = "int";
+    tabela_tipos["int+float"] = "float";
+    tabela_tipos["int+string"] = "string";
+    tabela_tipos["int+char"] = "char";
+    tabela_tipos["float+float"] = "float";
+    tabela_tipos["float+string"] = "string";
+    tabela_tipos["char+char"] = "string";
+    tabela_tipos["char+string"] = "string";
+    tabela_tipos["float+string"] = "string";
+    tabela_tipos["string+string"] = "string";
+    
+    tabela_tipos["int-int"] = "int";
+    tabela_tipos["int-float"] = "float";
+    tabela_tipos["int-char"] = "char";
+    tabela_tipos["float-float"] = "float";
+    
+    tabela_tipos["int*int"] = "int";
+    tabela_tipos["int*float"] = "float";
+    tabela_tipos["float*float"] = "float";
+    
+    tabela_tipos["int/int"] = "int";
+    tabela_tipos["int/float"] = "float";
+    tabela_tipos["float/float"] = "float";
+    
+    return tabela_tipos;   
 }
