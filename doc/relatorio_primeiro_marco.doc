@@ -1,0 +1,44 @@
+﻿UNIVERSIDADE FEDERAL RURAL DO RIO DE JANEIRO
+Instituto Multidisciplinar de Nova Iguaçu
+Ciência da Computação
+
+Compiladores
+Prof.: Filipe Braida
+Grupo: Raíza Santana, Válber Laux e Victor Pedro
+
+
+PRIMEIRO MARCO – 19 de dezembro de 2013
+
+
+	O primeiro marco do trabalho da disciplina de Compiladores consiste na implementação de itens das partes léxica e sintática. Nessa fase, faz-se apenas o reconhecimento léxico do código de entrada e a apresentação de um código intermediário em C, com comandos de apenas 3 endereços.
+	
+1. Tipos
+	
+	Todas as variáveis possuem um tipo associado. Essa informação é importante, por exemplo, nas atribuições quando o tipo atribuído à variável é diferente do tipo declarado.
+
+2. Declarações
+
+	Variáveis usadas no código devem ser declaradas. Para garantir isso, toda vez que uma variável é declarada, uma nova é criada e salva em um mapa com referência ao nome original, permitindo sua recuperação posterior.
+
+3. Atribuições
+
+	Uma variável declarada pode ter um valor atribuído. Essa atribuição pode ser feita no momento da declaração. 
+
+	É preciso verificar se o valor atribuído é compatível com a variável. Em alguns casos é necessária uma conversão (Ex.: float c = 1; 1 é uma variável inteira que pode ser atribuída a um flutuante, mediante conversão).
+
+4. Expressões (Aritmética e Relacional)
+
+	As expressões aritméticas são sempre resolvidas em pares, garantindo um comando de três endereços apenas. Multiplicação e Divisão têm prioridade sobre Soma e Subtração, Parêntesis tem prioridade sobre todas. 
+
+	Expressões relacionais retornam um inteiro (0 ou 1), aceitanto comparações entre inteiros e flutuantes, char e inteiros e char e string. As operações lógicas só podem ser realizadas sobre dois operadores booleanos, retornando também um inteiro (0 ou 1). 
+
+	Para realizar as operações nas expressões, usamos uma tabela que guarda as informações sobre o tipo de retorno esperado para as combinações de tipos e operações possíveis, garantindo que a expressão possa ser realizada.
+
+
+	
+
+
+	
+	
+	
+

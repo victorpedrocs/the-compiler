@@ -477,9 +477,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    48,    48,    54,    60,    66,    71,    73,    79,    95,
-     102,   130,   136,   142,   149,   149,   149,   149,   149,   151,
-     151,   151,   151,   151,   153,   153,   153,   153
+       0,    48,    48,    54,    60,    66,    71,    73,    79,    94,
+     101,   129,   135,   141,   148,   148,   148,   148,   148,   150,
+     150,   150,   150,   150,   152,   152,   152,   152
 };
 #endif
 
@@ -1463,7 +1463,6 @@ yyreduce:
                 	(yyvsp[(4) - (5)]).traducao += "\t" + (yyvsp[(1) - (5)]).traducao + " " + temp_cast + " = " + "(" + (yyvsp[(1) - (5)]).traducao + ")" + (yyvsp[(4) - (5)]).variavel + ";\n";
                 	(yyvsp[(4) - (5)]).variavel = temp_cast;
                 	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + (yyvsp[(1) - (5)]).traducao + " " + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
-                	//$4.tipo = $1.traducao;
                 }
                 else
                 	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + (yyvsp[(1) - (5)]).traducao + " " + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + ";\n\t" + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
@@ -1473,7 +1472,7 @@ yyreduce:
   case 9:
 
 /* Line 1455 of yacc.c  */
-#line 96 "sintatica.y"
+#line 95 "sintatica.y"
     {
 				(yyval).variavel = (yyvsp[(2) - (3)]).variavel;
 				(yyval).traducao = (yyvsp[(2) - (3)]).traducao;
@@ -1484,7 +1483,7 @@ yyreduce:
   case 10:
 
 /* Line 1455 of yacc.c  */
-#line 103 "sintatica.y"
+#line 102 "sintatica.y"
     {	
 				(yyval).variavel = getID();
 				
@@ -1516,7 +1515,7 @@ yyreduce:
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 131 "sintatica.y"
+#line 130 "sintatica.y"
     {
 				(yyval).variavel = getID();
 				(yyval).traducao = "\t"+ (yyval).tipo + " " + (yyval).variavel + " = " + (yyvsp[(1) - (1)]).traducao + ";\n";
@@ -1526,7 +1525,7 @@ yyreduce:
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 137 "sintatica.y"
+#line 136 "sintatica.y"
     {
 
 				(yyval).traducao = (yyvsp[(3) - (3)]).traducao + "\t" + tab_variaveis[(yyvsp[(1) - (3)]).variavel].nome + " = " + (yyvsp[(3) - (3)]).variavel + ";\n";
@@ -1536,7 +1535,7 @@ yyreduce:
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 143 "sintatica.y"
+#line 142 "sintatica.y"
     {
 				(yyval).traducao = "";
 				(yyval).variavel = tab_variaveis[(yyvsp[(1) - (1)]).variavel].nome;
@@ -1546,7 +1545,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 1550 "y.tab.c"
+#line 1549 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1758,7 +1757,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 156 "sintatica.y"
+#line 155 "sintatica.y"
 
 
 #include "lex.yy.c"
