@@ -23,6 +23,7 @@ int yylex(void);
 void yyerror(string);
 string getID(void);
 string getTipo(string, string, string);
+string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
 
 map<string, struct variavel> tab_variaveis;
@@ -30,14 +31,15 @@ map<string, string> tab_tipos = cria_tabela_tipos();
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG
 %token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL
 %token TK_FIM TK_ERROR
 
 %start S
 
-%left TK_SOMA_SUB
-%left TK_MULT_DIV
+%left TK_SOMA_SUB TK_OP_REL 
+%left TK_MULT_DIV 
+%left TK_OP_LOG
 
 
 %%
@@ -77,83 +79,58 @@ COMANDO 	: E ';'
             | TIPO TK_ID '=' E ';'
             {
                 tab_variaveis[$2.variavel] = {getID(), $1.traducao};
-                $$.traducao = $4. traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                
+                if($1.traducao != $4.tipo)
+                {
+                	string temp_cast = getID();
+                	$4.traducao += "\t" + $1.traducao + " " + temp_cast + " = " + "(" + $1.traducao + ")" + $4.variavel + ";\n";
+                	$4.variavel = temp_cast;
+                	$$.traducao = $4.traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                }
+                else
+                	$$.traducao = $4.traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
             };
 
 E 			: '('E')' 
 			{
 				$$.variavel = $2.variavel;
 				$$.traducao = $2.traducao;
+				$$.tipo = $2.tipo;
 			}
 			
 			| E OPERADOR E
 			{	
 				$$.variavel = getID();
 				
-				string tipo = getTipo($1.tipo, $2.traducao, $3.tipo);
+				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
 				
 				if($1.tipo != $3.tipo)
 				{
 					string temp_cast = getID();
 					
-					if($1.tipo != tipo)
+					if($1.tipo != getTipoCast($1.tipo, $3.tipo))
 					{
-						$1.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $1.variavel + ";\n";
+						$1.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
-						$1.tipo = tipo;
+						$1.tipo = tipo_retorno;
 					}
 					else
 					{
-						$3.traducao += "\t" + tipo + " " + temp_cast + " = " + "(" + tipo + ")" + $3.variavel + ";\n";
+						$3.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
-						$3.tipo = tipo;
+						$3.tipo = tipo_retorno;
 					}
 				}
 				
-				$$.tipo = tipo;
+				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.tipo + " " + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
-			
-			/*
-			| E '-' E
-			{	
-				$$.variavel = getID();
-				
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " - " + $3.variavel + ";\n";
-			}
-			
-			| E '*' E
-			{	
-				$$.variavel = getID();
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " * " + $3.variavel + ";\n";
-			}
-			
-			| E '/' E
-			{	
-				$$.variavel = getID();
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " / " + $3.variavel + ";\n";
-			}
-			*/
 			
 			| VALOR
 			{
 				$$.variavel = getID();
 				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
 			}
-				
-			/*
-			| TK_NUM
-			{
-				$$.variavel = getID();
-				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
-			}
-			
-			| TK_REAL
-			{
-				$$.variavel = getID();
-				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
-			}
-			*/
 			
 			| TK_ID '=' E
 			{
@@ -172,7 +149,8 @@ TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOO
 
 VALOR		: TK_NUM | TK_REAL | TK_CHAR | TK_STRING | TK_BOOL;
 
-OPERADOR	: TK_SOMA_SUB | TK_MULT_DIV;
+OPERADOR	: TK_SOMA_SUB | TK_MULT_DIV | TK_OP_REL | TK_OP_LOG;
+
 
 %%
 
@@ -199,14 +177,11 @@ string getID()
 
 	stringstream ss;
 	ss << "temp" << i++;
-
-	//cout << "int " << ss.str() << endl;
 	
 	return ss.str();
 }
 
 
-//@TODO: Tabela de conversoes
 string getTipo(string var1, string op, string var2)
 {
     string tipo_retorno = "";
@@ -221,6 +196,19 @@ string getTipo(string var1, string op, string var2)
 	
 	perror("ERRO: Tipos incompativeis");
 	exit(EXIT_FAILURE);
+}
+
+string getTipoCast(string var1, string var2)
+{
+
+	if(var1 == "float" || var2 == "float")
+		return "float";
+		
+	else if (var1 == "string" || var2 == "string")	
+		return "string";
+		
+	else return "int";
+	
 }
 
 map<string, string> cria_tabela_tipos()
@@ -249,6 +237,55 @@ map<string, string> cria_tabela_tipos()
     tabela_tipos["int/int"] = "int";
     tabela_tipos["int/float"] = "float";
     tabela_tipos["float/float"] = "float";
+      
+    tabela_tipos["int>int"] = "int";
+    tabela_tipos["float>float"] = "int";
+    tabela_tipos["float>int"] = "int";
+    tabela_tipos["char>char"] = "int";    
+	tabela_tipos["string>string"] = "int"; //@ TODO
+
+    tabela_tipos["int>=int"] = "int";
+    tabela_tipos["float>=float"] = "int";
+    tabela_tipos["float>=int"] = "int";
+    tabela_tipos["char>=char"] = "int";
+    tabela_tipos["string>=string"] = "int"; //@ TODO
+    
+    tabela_tipos["int<int"] = "int";
+    tabela_tipos["float<float"] = "int";
+    tabela_tipos["float<int"] = "int";
+    tabela_tipos["char<char"] = "int";
+    tabela_tipos["string<string"] = "int";
+    
+    tabela_tipos["int<=int"] = "int";
+    tabela_tipos["float<=float"] = "int";
+    tabela_tipos["float<=int"] = "int";
+    tabela_tipos["char<=char"] = "int";
+    tabela_tipos["string<=string"] = "int"; //@ TODO
+    
+    tabela_tipos["int==int"] = "int";
+    tabela_tipos["float==float"] = "int";
+    tabela_tipos["float==int"] = "int";
+    tabela_tipos["char==char"] = "int";
+    tabela_tipos["string==string"] = "int";
+    
+    tabela_tipos["int!=int"] = "int";
+    tabela_tipos["float!=float"] = "int";
+    tabela_tipos["float!=int"] = "int";
+    tabela_tipos["char!=char"] = "int";
+    tabela_tipos["string!=string"] = "int";
+    
+    tabela_tipos["int&&int"] = "int";
+    tabela_tipos["int||int"] = "int";
     
     return tabela_tipos;   
 }
+
+/*
+void gera_traducao_operacoes(void)
+{
+	cout << "IMPRESSAO EXEMPLO:::" << E1->variavel << endl;
+}
+
+
+[">" ">=" "<" "<=" "==" "!="]
+*/

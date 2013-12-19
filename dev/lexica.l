@@ -32,6 +32,17 @@ ID {LETRA}({LETRA}|{NUM})*
 [+\-]	{ yylval.traducao = yytext; return TK_SOMA_SUB; }
 [*/]	{ yylval.traducao = yytext; return TK_MULT_DIV; }
 
+">="	{ yylval.traducao = yytext; return TK_OP_REL; }
+">"	{ yylval.traducao = yytext; return TK_OP_REL; }
+"<="	{ yylval.traducao = yytext; return TK_OP_REL; }
+"<"	{ yylval.traducao = yytext; return TK_OP_REL; }
+"=="	{ yylval.traducao = yytext; return TK_OP_REL; }
+"!="	{ yylval.traducao = yytext; return TK_OP_REL; }
+
+"&&"	{ yylval.traducao = yytext; return TK_OP_LOG; }
+"||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
+
+
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }

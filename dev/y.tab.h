@@ -1,8 +1,10 @@
-/* A Bison parser, made by GNU Bison 2.7.12-4996.  */
 
-/* Bison interface for Yacc-like parsers in C
+/* A Bison parser, made by GNU Bison 2.4.1.  */
+
+/* Skeleton interface for Bison's Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
+   Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,15 +32,6 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-#ifndef YY_YY_Y_TAB_H_INCLUDED
-# define YY_YY_Y_TAB_H_INCLUDED
-/* Enabling traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
-#if YYDEBUG
-extern int yydebug;
-#endif
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -53,15 +46,17 @@ extern int yydebug;
      TK_STRING = 262,
      TK_SOMA_SUB = 263,
      TK_MULT_DIV = 264,
-     TK_MAIN = 265,
-     TK_ID = 266,
-     TK_TIPO_INT = 267,
-     TK_TIPO_REAL = 268,
-     TK_TIPO_CHAR = 269,
-     TK_TIPO_STRING = 270,
-     TK_TIPO_BOOL = 271,
-     TK_FIM = 272,
-     TK_ERROR = 273
+     TK_OP_REL = 265,
+     TK_OP_LOG = 266,
+     TK_MAIN = 267,
+     TK_ID = 268,
+     TK_TIPO_INT = 269,
+     TK_TIPO_REAL = 270,
+     TK_TIPO_CHAR = 271,
+     TK_TIPO_STRING = 272,
+     TK_TIPO_BOOL = 273,
+     TK_FIM = 274,
+     TK_ERROR = 275
    };
 #endif
 /* Tokens.  */
@@ -72,15 +67,18 @@ extern int yydebug;
 #define TK_STRING 262
 #define TK_SOMA_SUB 263
 #define TK_MULT_DIV 264
-#define TK_MAIN 265
-#define TK_ID 266
-#define TK_TIPO_INT 267
-#define TK_TIPO_REAL 268
-#define TK_TIPO_CHAR 269
-#define TK_TIPO_STRING 270
-#define TK_TIPO_BOOL 271
-#define TK_FIM 272
-#define TK_ERROR 273
+#define TK_OP_REL 265
+#define TK_OP_LOG 266
+#define TK_MAIN 267
+#define TK_ID 268
+#define TK_TIPO_INT 269
+#define TK_TIPO_REAL 270
+#define TK_TIPO_CHAR 271
+#define TK_TIPO_STRING 272
+#define TK_TIPO_BOOL 273
+#define TK_FIM 274
+#define TK_ERROR 275
+
 
 
 
@@ -93,18 +91,4 @@ typedef int YYSTYPE;
 
 extern YYSTYPE yylval;
 
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void *YYPARSE_PARAM);
-#else
-int yyparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void);
-#else
-int yyparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_YY_Y_TAB_H_INCLUDED  */
