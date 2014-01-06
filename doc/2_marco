@@ -3,6 +3,7 @@
 * 1º marco completo
 
 * String
+	Concatenação, Comparação (pode usar strcmp, strcpy)
 
 {
 
