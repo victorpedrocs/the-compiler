@@ -5,13 +5,15 @@
 
 ESPACO [ \t]
 DIGITO [0-9]
-LETRA [A-Za-z_]
+LETRA [A-Za-z]
+CARACTER_ESP [?_-]
 
 DELIM {ESPACO}+
 NUM {DIGITO}+
 REAL {NUM}+("."{NUM}+)?
 CHAR \'({LETRA}|{NUM})\'
-ID {LETRA}({LETRA}|{NUM})*
+ID _?({LETRA}|{NUM}|_)*
+STRING "\""({LETRA}|{NUM}|{CARACTER_ESP})*"\""
 
 %%
 
@@ -47,6 +49,7 @@ ID {LETRA}({LETRA}|{NUM})*
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }
 {CHAR}		{ yylval.traducao = yytext; yylval.tipo = "char"; return TK_CHAR; }
+{STRING} { yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
 
 .		{ *yytext; }
 
