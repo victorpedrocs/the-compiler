@@ -379,13 +379,13 @@ struct yy_trans_info
 	};
 static yyconst flex_int16_t yy_accept[69] =
     {   0,
-       20,   20,   27,   25,    2,    1,   25,   25,   25,   25,
-        9,   11,   10,   20,   15,    9,   13,   20,   20,   20,
-       20,   20,   20,   20,   20,   25,    2,   17,   24,    0,
-        0,   18,    0,    0,    0,   20,   20,   14,   16,   12,
-       20,   20,   20,   20,   20,   20,   20,   19,   23,   22,
-       20,   20,   20,    4,   20,   20,   20,    6,   20,    3,
-       20,   20,    5,   20,   20,    7,    8,    0
+       21,   21,   27,   25,    2,    1,   25,   25,   25,   25,
+        9,   11,   10,   20,   15,    9,   13,   21,   21,   21,
+       21,   21,   21,   21,   21,   25,    2,   17,   24,    0,
+        0,   18,    0,    0,    0,   20,   21,   14,   16,   12,
+       21,   21,   21,   21,   21,   21,   21,   19,   23,   22,
+       21,   21,   21,    4,   21,   21,   21,    6,   21,    3,
+       21,   21,    5,   21,   21,    7,    8,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -814,27 +814,27 @@ YY_RULE_SETUP
 case 4:
 YY_RULE_SETUP
 #line 26 "lexica.l"
-{yylval.traducao = yytext; return TK_TIPO_INT;}
+{yylval.tipo = yytext; return TK_TIPO_INT;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 #line 27 "lexica.l"
-{yylval.traducao = yytext; return TK_TIPO_REAL;}
+{yylval.tipo = yytext; return TK_TIPO_REAL;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
 #line 28 "lexica.l"
-{yylval.traducao = yytext; return TK_TIPO_CHAR;}
+{yylval.tipo = yytext; return TK_TIPO_CHAR;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
 #line 29 "lexica.l"
-{yylval.traducao = yytext; return TK_TIPO_STRING;}
+{yylval.tipo = yytext; return TK_TIPO_STRING;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
 #line 30 "lexica.l"
-{yylval.traducao = yytext; return TK_TIPO_BOOL;}
+{yylval.tipo = yytext; return TK_TIPO_BOOL;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
@@ -894,12 +894,12 @@ YY_RULE_SETUP
 case 20:
 YY_RULE_SETUP
 #line 48 "lexica.l"
-{ yylval.variavel = yytext; return TK_ID; }
+{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 49 "lexica.l"
-{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
+{ yylval.variavel = yytext; return TK_ID; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP

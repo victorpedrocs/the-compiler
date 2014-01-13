@@ -76,23 +76,25 @@ COMANDO 	: E ';'
 
             | TIPO TK_ID ';'
             {
-                tab_variaveis[$2.variavel] = {getID(), $1.traducao};
-                $$.traducao = "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n";
+                tab_variaveis[$2.variavel] = {getID(), $1.tipo};
             }
             
             | TIPO TK_ID '=' E ';'
             {
-                tab_variaveis[$2.variavel] = {getID(), $1.traducao};
+                tab_variaveis[$2.variavel] = {getID(), $1.tipo};
                 
-                if($1.traducao != $4.tipo)
+                // <casting>
+                if($1.tipo != $4.tipo)
                 {
                 	string temp_cast = getID();
-                	$4.traducao += "\t" + $1.traducao + " " + temp_cast + " = " + "(" + $1.traducao + ")" + $4.variavel + ";\n";
+                	$4.traducao += "\t" + $1.tipo + " " + temp_cast + " = " + "(" + $1.tipo + ")" + $4.variavel + ";\n";
                 	$4.variavel = temp_cast;
-                	$$.traducao = $4.traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                	$$.traducao = $4.traducao + "\t" + $1.tipo + " " + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
                 }
+                // </casting>
                 else
-                	$$.traducao = $4.traducao + "\t" + $1.traducao + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                	$$.traducao = $4.traducao + "\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+
             };
 
 E 			: '('E')' 
@@ -105,9 +107,10 @@ E 			: '('E')'
 			| E OPERADOR E
 			{	
 				$$.variavel = getID();
+				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
+				tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
-				
+				//<casting>
 				if($1.tipo != $3.tipo)
 				{
 					string temp_cast = getID();
@@ -125,15 +128,16 @@ E 			: '('E')'
 						$3.tipo = tipo_retorno;
 					}
 				}
-				
+				//</casting>
 				$$.tipo = tipo_retorno;
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.tipo + " " + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
 			| VALOR
-			{
+			{	
 				$$.variavel = getID();
-				$$.traducao = "\t"+ $$.tipo + " " + $$.variavel + " = " + $1.traducao + ";\n";
+				tab_variaveis[$$.variavel] = {$$.variavel, $1.tipo};					
+				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
 			| TK_ID '=' E
@@ -294,7 +298,7 @@ void declaracoes()
 	for(it_type iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++)
 		ss << "\t" <<iterator->second.tipo << " " << iterator->second.nome << ";\n";
 		
-	cout << ss.str() << endl;
+	cout << ss.str() << "\t//----------------\n" << endl;
 }
 
 /*

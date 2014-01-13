@@ -481,9 +481,9 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    50,    50,    58,    64,    70,    75,    77,    83,    98,
-     105,   133,   139,   145,   152,   152,   152,   152,   152,   154,
-     154,   154,   154,   154,   156,   156,   156,   156
+       0,    50,    50,    58,    64,    70,    75,    77,    83,   101,
+     108,   137,   144,   150,   157,   157,   157,   157,   157,   159,
+     159,   159,   159,   159,   161,   161,   161,   161
 };
 #endif
 
@@ -1479,8 +1479,8 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 78 "sintatica.y"
     {
-                tab_variaveis[(yyvsp[(2) - (3)]).variavel] = {getID(), (yyvsp[(1) - (3)]).traducao};
-                (yyval).traducao = "\t" + (yyvsp[(1) - (3)]).traducao + " " + tab_variaveis[(yyvsp[(2) - (3)]).variavel].nome + ";\n";
+                tab_variaveis[(yyvsp[(2) - (3)]).variavel] = {getID(), (yyvsp[(1) - (3)]).tipo};
+                //$$.traducao = "\t" + $1.tipo + " " + tab_variaveis[$2.variavel].nome + ";\n";
             }
     break;
 
@@ -1489,24 +1489,27 @@ yyreduce:
 /* Line 1806 of yacc.c  */
 #line 84 "sintatica.y"
     {
-                tab_variaveis[(yyvsp[(2) - (5)]).variavel] = {getID(), (yyvsp[(1) - (5)]).traducao};
+                tab_variaveis[(yyvsp[(2) - (5)]).variavel] = {getID(), (yyvsp[(1) - (5)]).tipo};
                 
-                if((yyvsp[(1) - (5)]).traducao != (yyvsp[(4) - (5)]).tipo)
+                // <casting>
+                if((yyvsp[(1) - (5)]).tipo != (yyvsp[(4) - (5)]).tipo)
                 {
                 	string temp_cast = getID();
-                	(yyvsp[(4) - (5)]).traducao += "\t" + (yyvsp[(1) - (5)]).traducao + " " + temp_cast + " = " + "(" + (yyvsp[(1) - (5)]).traducao + ")" + (yyvsp[(4) - (5)]).variavel + ";\n";
+                	(yyvsp[(4) - (5)]).traducao += "\t" + (yyvsp[(1) - (5)]).tipo + " " + temp_cast + " = " + "(" + (yyvsp[(1) - (5)]).tipo + ")" + (yyvsp[(4) - (5)]).variavel + ";\n";
                 	(yyvsp[(4) - (5)]).variavel = temp_cast;
-                	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + (yyvsp[(1) - (5)]).traducao + " " + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
+                	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + (yyvsp[(1) - (5)]).tipo + " " + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
                 }
+                // </casting>
                 else
-                	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + (yyvsp[(1) - (5)]).traducao + " " + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + ";\n\t" + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
+                	(yyval).traducao = (yyvsp[(4) - (5)]).traducao + "\t" + tab_variaveis[(yyvsp[(2) - (5)]).variavel].nome + " = " + (yyvsp[(4) - (5)]).variavel + ";\n";
+//ERROR             $$.traducao = $4.traducao + "\t" + $1.tipo + " " + tab_variaveis[$2.variavel].nome + ";\n\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
             }
     break;
 
   case 9:
 
 /* Line 1806 of yacc.c  */
-#line 99 "sintatica.y"
+#line 102 "sintatica.y"
     {
 				(yyval).variavel = (yyvsp[(2) - (3)]).variavel;
 				(yyval).traducao = (yyvsp[(2) - (3)]).traducao;
@@ -1517,12 +1520,13 @@ yyreduce:
   case 10:
 
 /* Line 1806 of yacc.c  */
-#line 106 "sintatica.y"
+#line 109 "sintatica.y"
     {	
 				(yyval).variavel = getID();
+				string tipo_retorno = getTipo((yyvsp[(1) - (3)]).tipo, (yyvsp[(2) - (3)]).traducao, (yyvsp[(3) - (3)]).tipo);				
+				tab_variaveis[(yyval).variavel] = {(yyval).variavel, tipo_retorno};
 				
-				string tipo_retorno = getTipo((yyvsp[(1) - (3)]).tipo, (yyvsp[(2) - (3)]).traducao, (yyvsp[(3) - (3)]).tipo);
-				
+				//<casting>
 				if((yyvsp[(1) - (3)]).tipo != (yyvsp[(3) - (3)]).tipo)
 				{
 					string temp_cast = getID();
@@ -1540,26 +1544,27 @@ yyreduce:
 						(yyvsp[(3) - (3)]).tipo = tipo_retorno;
 					}
 				}
-				
+				//</casting>
 				(yyval).tipo = tipo_retorno;
-				(yyval).traducao = (yyvsp[(1) - (3)]).traducao + (yyvsp[(3) - (3)]).traducao + "\t" + (yyval).tipo + " " + (yyval).variavel + " = "+ (yyvsp[(1) - (3)]).variavel + " " + (yyvsp[(2) - (3)]).traducao + " " + (yyvsp[(3) - (3)]).variavel + ";\n";
+				(yyval).traducao = (yyvsp[(1) - (3)]).traducao + (yyvsp[(3) - (3)]).traducao + "\t" + (yyval).variavel + " = "+ (yyvsp[(1) - (3)]).variavel + " " + (yyvsp[(2) - (3)]).traducao + " " + (yyvsp[(3) - (3)]).variavel + ";\n";
 			}
     break;
 
   case 11:
 
 /* Line 1806 of yacc.c  */
-#line 134 "sintatica.y"
-    {
+#line 138 "sintatica.y"
+    {	
 				(yyval).variavel = getID();
-				(yyval).traducao = "\t"+ (yyval).tipo + " " + (yyval).variavel + " = " + (yyvsp[(1) - (1)]).traducao + ";\n";
+				tab_variaveis[(yyval).variavel] = {(yyval).variavel, (yyvsp[(1) - (1)]).tipo};					
+				(yyval).traducao = "\t" + (yyval).variavel + " = " + (yyvsp[(1) - (1)]).traducao + ";\n";
 			}
     break;
 
   case 12:
 
 /* Line 1806 of yacc.c  */
-#line 140 "sintatica.y"
+#line 145 "sintatica.y"
     {
 
 				(yyval).traducao = (yyvsp[(3) - (3)]).traducao + "\t" + tab_variaveis[(yyvsp[(1) - (3)]).variavel].nome + " = " + (yyvsp[(3) - (3)]).variavel + ";\n";
@@ -1569,7 +1574,7 @@ yyreduce:
   case 13:
 
 /* Line 1806 of yacc.c  */
-#line 146 "sintatica.y"
+#line 151 "sintatica.y"
     {
 				(yyval).traducao = "";
 				(yyval).variavel = tab_variaveis[(yyvsp[(1) - (1)]).variavel].nome;
@@ -1579,7 +1584,7 @@ yyreduce:
 
 
 /* Line 1806 of yacc.c  */
-#line 1583 "y.tab.c"
+#line 1588 "y.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1810,7 +1815,7 @@ yyreturn:
 
 
 /* Line 2067 of yacc.c  */
-#line 159 "sintatica.y"
+#line 164 "sintatica.y"
 
 
 #include "lex.yy.c"
@@ -1949,7 +1954,7 @@ void declaracoes()
 	for(it_type iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++)
 		ss << "\t" <<iterator->second.tipo << " " << iterator->second.nome << ";\n";
 		
-	cout << ss.str() << endl;
+	cout << ss.str() << "\t//----------------\n" << endl;
 }
 
 /*
