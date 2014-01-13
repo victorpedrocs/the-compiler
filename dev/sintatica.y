@@ -25,9 +25,11 @@ string getID(void);
 string getTipo(string, string, string);
 string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
+void declaracoes();
 
 map<string, struct variavel> tab_variaveis;
 map<string, string> tab_tipos = cria_tabela_tipos();
+
 
 %}
 
@@ -47,7 +49,9 @@ map<string, string> tab_tipos = cria_tabela_tipos();
 
 S 			: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
 			{
-				cout << "/*Compilador C'*/\n" << "#include <iostream>\n#include<string.h>\n#include<stdio.h>\nint main(void)\n{\n" << $5.traducao << "\treturn 0;\n}" << endl; 
+				cout << "/*Compilador C'*/\n" << "#include <iostream>\n#include<string.h>\n#include<stdio.h>\nint main(void)\n{\n" <<endl;
+				declaracoes();
+				cout << $5.traducao << "\treturn 0;\n}" << endl; 
 			}
 			;
 
@@ -162,6 +166,8 @@ int main( int argc, char* argv[] )
 {
 	yyparse();
 
+	//declaracoes();
+	
 	return 0;
 }
 
@@ -278,6 +284,17 @@ map<string, string> cria_tabela_tipos()
     tabela_tipos["int||int"] = "int";
     
     return tabela_tipos;   
+}
+
+void declaracoes()
+{
+	stringstream ss;
+	typedef map<string, struct variavel>::iterator it_type;
+	
+	for(it_type iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++)
+		ss << "\t" <<iterator->second.tipo << " " << iterator->second.nome << ";\n";
+		
+	cout << ss.str() << endl;
 }
 
 /*
