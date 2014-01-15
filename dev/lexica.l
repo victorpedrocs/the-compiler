@@ -6,14 +6,14 @@
 ESPACO [ \t]
 DIGITO [0-9]
 LETRA [A-Za-z]
-CARACTER_ESP [?_-]
+CARACTER_ESP [?!*@#$%&=_-]
 
 DELIM {ESPACO}+
 NUM {DIGITO}+
 REAL {NUM}+("."{NUM}+)?
 CHAR \'({LETRA}|{NUM})\'
 ID _?({LETRA}|{NUM}|_)*
-STRING "\""({LETRA}|{NUM}|{CARACTER_ESP})*"\""
+STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 
 %%
 
@@ -26,8 +26,8 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP})*"\""
 "int"		{yylval.tipo = yytext; return TK_TIPO_INT;}
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}
-"string"	{yylval.tipo = yytext; return TK_TIPO_STRING;}
-"boolean"	{yylval.tipo = yytext; return TK_TIPO_BOOL;}
+"string"	{yylval.tipo = "char[]"; return TK_TIPO_STRING;}
+"boolean"	{yylval.tipo = "int"; return TK_TIPO_BOOL;}
 
 [(){}[\];,=]	{ return *yytext; }
 
@@ -49,7 +49,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP})*"\""
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }
 {CHAR}		{ yylval.traducao = yytext; yylval.tipo = "char"; return TK_CHAR; }
-{STRING} { yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
+{STRING} { yylval.traducao = yytext; yylval.tipo = "char[]";return TK_STRING;}
 
 .		{ *yytext; }
 
