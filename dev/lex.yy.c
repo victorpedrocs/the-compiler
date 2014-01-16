@@ -829,7 +829,7 @@ YY_RULE_SETUP
 case 7:
 YY_RULE_SETUP
 #line 29 "lexica.l"
-{yylval.tipo = "char[]"; return TK_TIPO_STRING;}
+{yylval.tipo = "string"; return TK_TIPO_STRING;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
@@ -914,7 +914,7 @@ YY_RULE_SETUP
 case 24:
 YY_RULE_SETUP
 #line 52 "lexica.l"
-{ yylval.traducao = yytext; yylval.tipo = "char[]";return TK_STRING;}
+{ yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
