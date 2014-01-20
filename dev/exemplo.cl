@@ -1,5 +1,8 @@
 int main()
 {
-	int a = 2+2;
+	string a;
+	a = "asa";
+	string b = a;
+
 	
 }

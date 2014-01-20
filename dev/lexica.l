@@ -27,7 +27,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}
 "string"	{yylval.tipo = "string"; return TK_TIPO_STRING;}
-"boolean"	{yylval.tipo = "int"; return TK_TIPO_BOOL;}
+"boolean"	{yylval.tipo = "int"; return TK_TIPO_INT;}
 
 [(){}[\];,=]	{ return *yytext; }
 

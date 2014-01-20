@@ -17,6 +17,7 @@ struct atributos
 struct variavel
 {
     string nome, tipo;
+    int tamanho;
 };
 
 int yylex(void);
@@ -81,13 +82,22 @@ COMANDO 	: E ';'
             
             | TK_ID '=' E ';'
 			{
-				
 				$$.traducao = $3.traducao + "\t" + tab_variaveis[$1.variavel].nome + " = " + $3.variavel + ";\n";
+				
+				if(tab_variaveis[$1.variavel].tipo == "string")
+				{
+					tab_variaveis[$1.variavel].tamanho = tab_variaveis[$3.variavel].tamanho;
+				}
+				
+				cout << "TAMANHO: " <<  tab_variaveis[$3.variavel].tamanho << endl;
+
 			}
 			
             | TIPO TK_ID '=' E ';'
             {
-                tab_variaveis[$2.variavel] = {getID(), $1.tipo};
+            
+            	cout << "O tamanho de E é: " << tab_variaveis[$4.variavel].tamanho << endl;
+                tab_variaveis[$2.variavel] = {getID(), $1.tipo, tab_variaveis[$4.variavel].tamanho};
                 
                 // <casting>
                 if($1.tipo != $4.tipo)
@@ -100,6 +110,8 @@ COMANDO 	: E ';'
                 // </casting>
                 else
                 	$$.traducao = $4.traducao + "\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+               
+//                tab_variaveis[$2.variavel].tamanho = tab_variaveis[$4.variavel].tamanho;
 
             };
 
@@ -114,9 +126,9 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				//<casting>
+				
+				/*<casting>
 				if($1.tipo != $3.tipo)
 				{
 					string temp_cast = getID();
@@ -134,9 +146,22 @@ E 			: '('E')'
 						$3.tipo = tipo_retorno;
 					}
 				}
-				//</casting>
+				</casting> */
+				
+				if(tipo_retorno == "string")
+				{
+					$$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + $3.variavel + ");\n"; 
+					tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno, (tab_variaveis[$1.variavel].tamanho + tab_variaveis[$3.variavel].tamanho)};
+				}
+
+				else
+				{
+					$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";	
+					tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
+				}	
+				
 				$$.tipo = tipo_retorno;
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+				
 			}
 			
 			| E TK_MULT_DIV E
@@ -204,6 +229,13 @@ E 			: '('E')'
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
+			| TK_STRING
+			{	
+				$$.variavel = getID();
+				tab_variaveis[$$.variavel] = {$$.variavel, $1.tipo, (int) $1.traducao.length()-2}; // -2 para descontar as aspas
+				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n"; 
+			}
+			
 			| E TK_OP_REL E
 			{	
 				$$.variavel = getID();
@@ -237,12 +269,13 @@ E 			: '('E')'
 			{
 				$$.traducao = "";
 				$$.variavel = tab_variaveis[$1.variavel].nome;
+		
 			}
 			;
 			
 TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL;
 
-VALOR		: TK_NUM | TK_REAL | TK_CHAR | TK_STRING | TK_BOOL;
+VALOR		: TK_NUM | TK_REAL | TK_CHAR;
 
 //OPERADOR	: TK_OP_REL | TK_OP_LOG;
 
@@ -271,7 +304,7 @@ string getID()
 	static int i = 0;
 
 	stringstream ss;
-	ss << "temp" << i++;
+	ss << "$temp" << i++;
 	
 	return ss.str();
 }
@@ -381,9 +414,11 @@ void declaracoes()
 	stringstream ss;
 	typedef map<string, struct variavel>::iterator it_type;
 	
-	for(it_type iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++)
-		ss << "\t" <<iterator->second.tipo << " " << iterator->second.nome << ";\n";
-		
+	for(it_type iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++){
+		if(	iterator->second.nome == "")
+			ss << "\t" << "CHAVE COM ERRO:" << iterator->first << ";\n";	
+		ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << " " << iterator->second.tamanho << ";\n";
+	}
 	cout << ss.str() << "\n\t//----------------\n" << endl;
 }
 
