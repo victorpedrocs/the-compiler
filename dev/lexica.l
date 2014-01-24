@@ -27,7 +27,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}
 "string"	{yylval.tipo = "string"; return TK_TIPO_STRING;}
-"boolean"	{yylval.tipo = "int"; return TK_TIPO_INT;}
+"boolean"	{yylval.tipo = "unsigned short int"; return TK_TIPO_INT;}
 
 [(){}[\];,=]	{ return *yytext; }
 
@@ -35,9 +35,9 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 [*/]	{ yylval.traducao = yytext; return TK_MULT_DIV; }
 
 ">="	{ yylval.traducao = yytext; return TK_OP_REL; }
-">"	{ yylval.traducao = yytext; return TK_OP_REL; }
+">"		{ yylval.traducao = yytext; return TK_OP_REL; }
 "<="	{ yylval.traducao = yytext; return TK_OP_REL; }
-"<"	{ yylval.traducao = yytext; return TK_OP_REL; }
+"<"		{ yylval.traducao = yytext; return TK_OP_REL; }
 "=="	{ yylval.traducao = yytext; return TK_OP_REL; }
 "!="	{ yylval.traducao = yytext; return TK_OP_REL; }
 
@@ -49,7 +49,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }
 {CHAR}		{ yylval.traducao = yytext; yylval.tipo = "char"; return TK_CHAR; }
-{STRING} { yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
+{STRING} 	{ yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
 
 .		{ *yytext; }
 

@@ -834,7 +834,7 @@ YY_RULE_SETUP
 case 8:
 YY_RULE_SETUP
 #line 30 "lexica.l"
-{yylval.tipo = "int"; return TK_TIPO_INT;}
+{yylval.tipo = "unsigned short int"; return TK_TIPO_INT;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP

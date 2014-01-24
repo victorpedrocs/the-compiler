@@ -1,8 +1,4 @@
 int main()
 {
-	string a;
-	a = "asa";
-	string b = a;
-
-	
+	int i = 0;
 }
