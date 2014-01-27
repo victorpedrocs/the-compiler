@@ -4,12 +4,14 @@
 #include <sstream>
 #include <map>
 #include <utility>
+#include <list>
 
 #define YYSTYPE atributos
 
 using namespace std;
 
 typedef map<string, struct variavel>::iterator mapa_it;
+typedef map<string, struct variavel> mapa;
 
 struct atributos
 {
@@ -31,9 +33,12 @@ string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
 void imprimeDeclaracoes();
 
-map<string, struct variavel> tab_variaveis;
+mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
 
+list<mapa*> pilhaDeMapas;
+
+pilhaDeMapas.push_front(tab_variaveis);
 
 %}
 
@@ -53,7 +58,7 @@ map<string, string> tab_tipos = cria_tabela_tipos();
 
 S 			: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
 			{
-				cout << "/*Compilador C'*/\n" << "#include <iostream>\n#include<string.h>\n#include<stdio.h>\nint main(void)\n{\n" <<endl;
+				cout << "/*Compilador C'*/\n" << "#include<stdio.h>\n#include<string.h>\nint main(void)\n{\n" <<endl;
 				imprimeDeclaracoes();
 				cout << $5.traducao << "\treturn 0;\n}" << endl; 
 			}
@@ -62,14 +67,23 @@ S 			: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
 BLOCO		: ABRE_BLOCO COMANDOS '}'
 			{
 				$$.traducao = $2.traducao;
-				// desempilha mapa
+				//desempilha mapa
 			}
 			;
 			
 ABRE_BLOCO	: '{'
 			{
-
+				
 			}
+			;
+
+/*
+BLOCO		: '{' COMANDOS '}'
+			{
+				$$.traducao = $2.traducao;
+			}
+			;
+*/
 
 COMANDOS	: COMANDO COMANDOS
 			{
@@ -86,25 +100,25 @@ COMANDO 	: E ';'
 
             | TIPO TK_ID ';'
             {
-                tab_variaveis[$2.variavel] = {getID(), $1.tipo};
+                (*tab_variaveis)[$2.variavel] = {getID(), $1.tipo};
                 $$.traducao = "";
             }
             
             | TK_ID '=' E ';'
 			{
 				if($$.tipo == "string")
-					$$.traducao = $3.traducao + "\tstrcpy(" + tab_variaveis[$1.variavel].nome + ", " + $3.variavel + ");\n";
+					$$.traducao = $3.traducao + "\tstrcpy(" + (*tab_variaveis)[$1.variavel].nome + ", " + $3.variavel + ");\n";
 				else
-					$$.traducao = $3.traducao + "\t" + tab_variaveis[$1.variavel].nome + " = " + $3.variavel + ";\n";
+					$$.traducao = $3.traducao + "\t" + (*tab_variaveis)[$1.variavel].nome + " = " + $3.variavel + ";\n";
 				
-				tab_variaveis[$1.variavel].tamanho = $3.tamanho;
+				(*tab_variaveis)[$1.variavel].tamanho = $3.tamanho;
 			}
 			
             | TIPO TK_ID '=' E ';'
             {
             
-//            	cout << "O tamanho de E é: " << tab_variaveis[$4.variavel].tamanho << endl;
-                tab_variaveis[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
+//            	cout << "O tamanho de E é: " << (*tab_variaveis)[$4.variavel].tamanho << endl;
+                (*tab_variaveis)[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
                 
                 /*
                 // <casting>
@@ -113,17 +127,17 @@ COMANDO 	: E ';'
                 	string temp_cast = getID();
                 	$4.traducao += "\t" + $1.tipo + " " + temp_cast + " = " + "(" + $1.tipo + ")" + $4.variavel + ";\n";
                 	$4.variavel = temp_cast;
-                	$$.traducao = $4.traducao + "\t" + $1.tipo + " " + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                	$$.traducao = $4.traducao + "\t" + $1.tipo + " " + (*tab_variaveis)[$2.variavel].nome + " = " + $4.variavel + ";\n";
                 }
                 // </casting>
                 else
                 */	
                 if($2.tipo == "string")
-	                $$.traducao = $4.traducao + "\tstrcpy(" + tab_variaveis[$2.variavel].nome + ", " + $4.variavel + ");\n";                	
+	                $$.traducao = $4.traducao + "\tstrcpy(" + (*tab_variaveis)[$2.variavel].nome + ", " + $4.variavel + ");\n";                	
 	            else
-	                $$.traducao = $4.traducao + "\t" + tab_variaveis[$2.variavel].nome + " = " + $4.variavel + ";\n";
+	                $$.traducao = $4.traducao + "\t" + (*tab_variaveis)[$2.variavel].nome + " = " + $4.variavel + ";\n";
                
-                tab_variaveis[$2.variavel].tamanho = $4.tamanho;
+                (*tab_variaveis)[$2.variavel].tamanho = $4.tamanho;
 
             };
 
@@ -164,14 +178,14 @@ E 			: '('E')'
 				{
 					$$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + $3.variavel + ");\n"; 
 					$$.tamanho = $1.tamanho + $3.tamanho;
-					tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno, $$.tamanho};
+					(*tab_variaveis)[$$.variavel] = {$$.variavel, tipo_retorno, $$.tamanho};
 					
 				}
 
 				else
 				{
 					$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";	
-					tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
+					(*tab_variaveis)[$$.variavel] = {$$.variavel, tipo_retorno};
 				}	
 				
 				$$.tipo = tipo_retorno;
@@ -182,7 +196,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
+				(*tab_variaveis)[$$.variavel] = {$$.variavel, tipo_retorno};
 				
 				//<casting>
 				if($1.tipo != $3.tipo)
@@ -211,7 +225,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
+				(*tab_variaveis)[$$.variavel] = {$$.variavel, tipo_retorno};
 				
 				//<casting>
 				if($1.tipo != $3.tipo)
@@ -239,7 +253,7 @@ E 			: '('E')'
 			| VALOR
 			{	
 				$$.variavel = getID();
-				tab_variaveis[$$.variavel] = {$$.variavel, $1.tipo};					
+				(*tab_variaveis)[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
@@ -247,7 +261,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				$$.tamanho = (int) $1.traducao.length()-2;
-				tab_variaveis[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
+				(*tab_variaveis)[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
 			}
 			
@@ -255,7 +269,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				tab_variaveis[$$.variavel] = {$$.variavel, tipo_retorno};
+				(*tab_variaveis)[$$.variavel] = {$$.variavel, tipo_retorno};
 				
 				//<casting>
 				if($1.tipo != $3.tipo)
@@ -283,8 +297,8 @@ E 			: '('E')'
 			| TK_ID
 			{
 				$$.traducao = "";
-				$$.variavel = tab_variaveis[$1.variavel].nome;
-				$$.tamanho = tab_variaveis[$1.variavel].tamanho;
+				$$.variavel = (*tab_variaveis)[$1.variavel].nome;
+				$$.tamanho = (*tab_variaveis)[$1.variavel].tamanho;
 			}
 			;
 			
@@ -428,15 +442,15 @@ void imprimeDeclaracoes()
 {
 	stringstream ss;
 
-	for(mapa_it iterator = tab_variaveis.begin(); iterator != tab_variaveis.end(); iterator++)
+	for(mapa_it iterator = (*tab_variaveis).begin(); iterator != (*tab_variaveis).end(); iterator++)
 	{
-		if(	iterator->second.nome == "")
+		if(iterator->second.nome == "")
 			ss << "\t" << "CHAVE COM ERRO:" << iterator->first << ";\n";
 			
 		if(iterator->second.tipo == "string")
 			ss << "\t" << + "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
 		else
-			ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << " " << iterator->second.tamanho << ";\n";
+			ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << ";\n";
 	}
 	
 	cout << ss.str() << "\n\t//----------------\n" << endl;
