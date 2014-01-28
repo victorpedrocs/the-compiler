@@ -25,8 +25,10 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 
 
 "if"		{return TK_IF;}
+"else"		{return TK_ELSE;}
 "while"		{return TK_WHILE;}
 "do"		{return TK_DO;}
+"for"		{return TK_FOR;}
 "int"		{yylval.tipo = yytext; return TK_TIPO_INT;}
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}
@@ -34,6 +36,10 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "boolean"	{yylval.tipo = "unsigned short int"; return TK_TIPO_INT;}
 
 [(){}[\];,=]	{ return *yytext; }
+
+
+"++"	{ yylval.traducao = yytext; return TK_MM;}
+"--"	{ yylval.traducao = yytext; return TK_MM;}
 
 [+\-]	{ yylval.traducao = yytext; return TK_SOMA_SUB; }
 [*/]	{ yylval.traducao = yytext; return TK_MULT_DIV; }

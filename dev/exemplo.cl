@@ -1,9 +1,9 @@
 int main()
 {
-	int a = 5;
-	do
+	int a;
+	
+	for (a=10; a<20; a=a+2)
 	{
-		int b = 2;
+		a = 2;
 	}
-	while (1);
 }

@@ -43,16 +43,17 @@ list<mapa*> pilhaDeMapas;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_IF TK_WHILE TK_DO
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM 
 %token TK_FIM TK_ERROR
 
 %start S
 
+
 %left TK_SOMA_SUB TK_OP_REL 
 %left TK_MULT_DIV
 %left TK_OP_LOG
-
+%left TK_ELSE
 
 %%
 
@@ -142,37 +143,51 @@ DECLARACAO	: TIPO TK_ID ';'
             }
             ;
             
-
+ATRIBUICAO	: TK_ID '=' E
+			{
+				if($$.tipo == "string")
+				{
+					$$.traducao = $3.traducao + "\tstrcpy(" + buscaNoMapa($1.variavel).nome + ", " + $3.variavel + ");\n";
+					(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
+				}
+				
+				else
+					$$.traducao = $3.traducao + "\t" + buscaNoMapa($1.variavel).nome + " = " + $3.variavel + ";\n";
+					
+			}
+			;
+			
+ELSE		: TK_ELSE COMANDO
+			
+			|
+			{
+				$$.traducao = "";
+			}
+			;
+			
 COMANDO 	: E ';'
 
 			| BLOCO
-			{
-				$$.traducao = $1.traducao;
-			}
             
-            | TK_ID '=' E ';'
-			{
-				if($$.tipo == "string")
-					$$.traducao = $3.traducao + "\tstrcpy(" + buscaNoMapa($1.variavel).nome + ", " + $3.variavel + ");\n";
-				else
-					$$.traducao = $3.traducao + "\t" + buscaNoMapa($1.variavel).nome + " = " + $3.variavel + ";\n";
-				
-				(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
-			}
-			
+            | ATRIBUICAO ';'
+
 			| DECLARACAO
-            {
-                $$.traducao = $1.traducao;
-            }
 			
 			/* if */
-			| TK_IF '(' E ')' COMANDO
+			| TK_IF '(' E ')' COMANDO ELSE
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
+				string label_fim_else = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo}; // criando e adicionando a variável que vai guardar a negacao da condicao
 				
-				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao + "\t" + label_fim_if + ":\n";
+				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao ;
+				
+				if ($6.traducao != "")
+					$$.traducao += "\tgoto " + label_fim_else + ";\n\n\t" + label_fim_if + ":\n" + $6.traducao + "\n\t" +label_fim_else + ":\n";
+				else
+					$$.traducao += "\t\n" + label_fim_if + ":\n";
+
 			}
 			
 			/* while */
@@ -183,7 +198,7 @@ COMANDO 	: E ';'
 				string label_fim_while = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo};
 				
-				$$.traducao = "\n\t" + label_inicio_while + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_while + ";\n" + $5.traducao + "\tgoto " + label_inicio_while + ";\n\n\t" + label_fim_while + ":\n";
+				$$.traducao = "\n\n\t" + label_inicio_while + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_while + ";\n" + $5.traducao + "\tgoto " + label_inicio_while + ";\n\n\t" + label_fim_while + ":\n";
 			}
 			
 			/* do while */
@@ -191,10 +206,42 @@ COMANDO 	: E ';'
 			{
 				string label_inicio_dowhile = geraLabel();
 				
-				$$.traducao = "\n\t" + label_inicio_dowhile + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + label_inicio_dowhile + ";\n";
+				$$.traducao = "\n\n\t" + label_inicio_dowhile + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + label_inicio_dowhile + ";\n\n";
+			}
+			
+			| TK_FOR '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
+			{
+				string label_inicio_for = geraLabel();
+				string label_fim_for = geraLabel();
+				string negacao_condicao = getID();
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $5.tipo};
+				
+				
+				$$.traducao = $3.traducao;
+				$$.traducao += "\n\t" + label_inicio_for + ":\n";
+				$$.traducao += $5.traducao + "\t" + negacao_condicao + " = !(" + $5.variavel + ");\n\t";
+				$$.traducao += "if(" + negacao_condicao + ") goto " + label_fim_for + ";\n";
+				$$.traducao += $9.traducao + $7.traducao;
+				$$.traducao += "\tgoto " + label_inicio_for + ";\n\n\t" + label_fim_for + ":\n";
+				
 			}
 			
             ;
+
+FOR_PARAM	: DECLARACAO
+			
+			| ATRIBUICAO
+			
+			| E
+
+			;
+
+
+
+//--------------------------------------------------------------------------------------
+
+
+
 
 E 			: '('E')' 
 			{
@@ -281,6 +328,7 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
+				/*
 				//<casting>
 				if($1.tipo != $3.tipo)
 				{
@@ -300,6 +348,8 @@ E 			: '('E')'
 					}
 				}
 				//</casting>
+				*/
+				
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
@@ -325,6 +375,7 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
+				/*
 				//<casting>
 				if($1.tipo != $3.tipo)
 				{
@@ -344,6 +395,8 @@ E 			: '('E')'
 					}
 				}
 				//</casting>
+				*/
+				
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
