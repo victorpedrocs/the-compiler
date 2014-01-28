@@ -44,7 +44,7 @@ list<mapa*> pilhaDeMapas;
 %}
 
 %token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_IF
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_IF TK_WHILE TK_DO
 %token TK_FIM TK_ERROR
 
 %start S
@@ -165,6 +165,7 @@ COMANDO 	: E ';'
                 $$.traducao = $1.traducao;
             }
 			
+			/* if */
 			| TK_IF '(' E ')' COMANDO
 			{
 				string negacao_condicao = getID();
@@ -173,6 +174,26 @@ COMANDO 	: E ';'
 				
 				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao + "\t" + label_fim_if + ":\n";
 			}
+			
+			/* while */
+			| TK_WHILE '(' E ')' COMANDO
+			{
+				string negacao_condicao = getID();
+				string label_inicio_while = geraLabel();
+				string label_fim_while = geraLabel();
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo};
+				
+				$$.traducao = "\n\t" + label_inicio_while + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_while + ";\n" + $5.traducao + "\tgoto " + label_inicio_while + ";\n\n\t" + label_fim_while + ":\n";
+			}
+			
+			/* do while */
+			| TK_DO COMANDO TK_WHILE '(' E ')' ';'
+			{
+				string label_inicio_dowhile = geraLabel();
+				
+				$$.traducao = "\n\t" + label_inicio_dowhile + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + label_inicio_dowhile + ";\n";
+			}
+			
             ;
 
 E 			: '('E')' 

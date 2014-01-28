@@ -1,8 +1,9 @@
 int main()
 {
 	int a = 5;
-	if (1) 
+	do
 	{
 		int b = 2;
 	}
+	while (1);
 }

@@ -54,8 +54,10 @@
      TK_TIPO_STRING = 272,
      TK_TIPO_BOOL = 273,
      TK_IF = 274,
-     TK_FIM = 275,
-     TK_ERROR = 276
+     TK_WHILE = 275,
+     TK_DO = 276,
+     TK_FIM = 277,
+     TK_ERROR = 278
    };
 #endif
 /* Tokens.  */
@@ -76,8 +78,10 @@
 #define TK_TIPO_STRING 272
 #define TK_TIPO_BOOL 273
 #define TK_IF 274
-#define TK_FIM 275
-#define TK_ERROR 276
+#define TK_WHILE 275
+#define TK_DO 276
+#define TK_FIM 277
+#define TK_ERROR 278
 
 
 

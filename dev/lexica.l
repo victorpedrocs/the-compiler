@@ -25,6 +25,8 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 
 
 "if"		{return TK_IF;}
+"while"		{return TK_WHILE;}
+"do"		{return TK_DO;}
 "int"		{yylval.tipo = yytext; return TK_TIPO_INT;}
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}
