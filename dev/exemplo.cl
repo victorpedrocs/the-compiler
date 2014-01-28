@@ -1,7 +1,8 @@
-int b = 9;
-
 int main()
 {
-	int i = 0;
-	i = b;
+	int a = 5;
+	if (1) 
+	{
+		int b = 2;
+	}
 }

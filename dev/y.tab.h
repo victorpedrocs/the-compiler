@@ -53,8 +53,9 @@
      TK_TIPO_CHAR = 271,
      TK_TIPO_STRING = 272,
      TK_TIPO_BOOL = 273,
-     TK_FIM = 274,
-     TK_ERROR = 275
+     TK_IF = 274,
+     TK_FIM = 275,
+     TK_ERROR = 276
    };
 #endif
 /* Tokens.  */
@@ -74,8 +75,9 @@
 #define TK_TIPO_CHAR 271
 #define TK_TIPO_STRING 272
 #define TK_TIPO_BOOL 273
-#define TK_FIM 274
-#define TK_ERROR 275
+#define TK_IF 274
+#define TK_FIM 275
+#define TK_ERROR 276
 
 
 

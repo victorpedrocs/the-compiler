@@ -23,6 +23,8 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 
 "main"		{return TK_MAIN;}
 
+
+"if"		{return TK_IF;}
 "int"		{yylval.tipo = yytext; return TK_TIPO_INT;}
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}

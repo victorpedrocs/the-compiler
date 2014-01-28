@@ -33,6 +33,7 @@ string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
 void getDeclaracoes(mapa* mapa_variaveis);
 struct variavel buscaNoMapa(string var);
+string geraLabel();
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -43,7 +44,7 @@ list<mapa*> pilhaDeMapas;
 %}
 
 %token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_IF
 %token TK_FIM TK_ERROR
 
 %start S
@@ -163,8 +164,16 @@ COMANDO 	: E ';'
             {
                 $$.traducao = $1.traducao;
             }
-			;
-            
+			
+			| TK_IF '(' E ')' COMANDO
+			{
+				string negacao_condicao = getID();
+				string label_fim_if = geraLabel();
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo}; // criando e adicionando a variável que vai guardar a negacao da condicao
+				
+				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao + "\t" + label_fim_if + ":\n";
+			}
+            ;
 
 E 			: '('E')' 
 			{
@@ -360,6 +369,16 @@ string getID()
 
 	stringstream ss;
 	ss << "$temp" << i++;
+	
+	return ss.str();
+}
+
+string geraLabel()
+{
+	static int i = 0;
+
+	stringstream ss;
+	ss << "label" << i++;
 	
 	return ss.str();
 }
