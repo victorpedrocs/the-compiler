@@ -401,6 +401,17 @@ E 			: '('E')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
+			| TK_ID TK_MM
+			{
+				string var_temp = getID();
+				string var_incremento = buscaNoMapa($1.variavel).nome;
+				char tipo_op = $2.traducao[0];
+				(*pilhaDeMapas.front())[var_temp] = {var_temp, "int"};
+				$$.variavel = getID();
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "int"};
+				$$.traducao = "\t" + var_temp + " = 1;\n\t" + $$.variavel + " = " + var_incremento + " " + tipo_op + " " + var_temp + ";\n\t" + var_incremento + " = " + $$.variavel + ";\n";
+			}
+			
 			| TK_ID
 			{
 				$$.traducao = "";
