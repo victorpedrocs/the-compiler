@@ -1,4 +1,5 @@
 %{
+
 #include <string>
 
 %}
@@ -22,7 +23,11 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 {DELIM} 	{}
 
 "main"		{return TK_MAIN;}
-
+"continue"	{return TK_CONTINUE;}
+"break"		{return TK_BREAK;}
+"switch"	{return TK_SWITCH;}
+"case"		{return TK_CASE;}
+":"			{return TK_DOISPONTOS;}
 
 "if"		{return TK_IF;}
 "else"		{return TK_ELSE;}
@@ -53,6 +58,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 
 "&&"	{ yylval.traducao = yytext; return TK_OP_LOG; }
 "||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
+"!"		{ yylval.traducao = yytext; return TK_NEG; }
 
 
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }

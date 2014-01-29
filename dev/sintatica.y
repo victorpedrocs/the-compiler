@@ -34,17 +34,20 @@ map<string, string> cria_tabela_tipos();
 void getDeclaracoes(mapa* mapa_variaveis);
 struct variavel buscaNoMapa(string var);
 string geraLabel();
+void desempilha_labels();
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
 string declaracoes;
 
 list<mapa*> pilhaDeMapas;
+list<string> pilhaDeLabelsInicio;
+list<string> pilhaDeLabelsFim;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM 
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE
 %token TK_FIM TK_ERROR
 
 %start S
@@ -53,7 +56,7 @@ list<mapa*> pilhaDeMapas;
 %left TK_SOMA_SUB TK_OP_REL 
 %left TK_MULT_DIV
 %left TK_OP_LOG
-%left TK_ELSE
+%left TK_ELSE TK_NEG
 
 %%
 
@@ -118,42 +121,53 @@ DECLARACAO	: TIPO TK_ID ';'
             {
 				(*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
                 
-                /*
-                // <casting>
-                if($1.tipo != $4.tipo)
+                if($1.tipo != $4.tipo) // então precisa fazer casting
                 {
+                	string tipo_cast = getTipo($1.tipo, "=", $4.tipo);
                 	string temp_cast = getID();
-                	$4.traducao += "\t" + $1.tipo + " " + temp_cast + " = " + "(" + $1.tipo + ")" + $4.variavel + ";\n";
-                	$4.variavel = temp_cast;
-                	$$.traducao = $4.traducao + "\t" + $1.tipo + " " + (*tab_variaveis)[$2.variavel].nome + " = " + $4.variavel + ";\n";
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
+                	$$.traducao = $4.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $4.variavel + ";\n";
+                	$$.traducao += "\t" + buscaNoMapa($2.variavel).nome + " = " + temp_cast + ";\n";
                 }
-                // </casting>
-                else
-                */
                 
-                if($2.tipo == "string")
-	                $$.traducao = $4.traducao + "\tstrcpy(" + buscaNoMapa($2.variavel).nome + ", " + $4.variavel + ");\n";                	
-	            else
-	            {
-	                $$.traducao = $4.traducao + "\t" + buscaNoMapa($2.variavel).nome + " = " + $4.variavel + ";\n";
-	                //cout << "minha traducao é: " << $$.traducao << endl;
-               	}
-                (*pilhaDeMapas.front())[$2.variavel].tamanho = $4.tamanho;
+                else
+                {
+		            if($2.tipo == "string")
+		            {
+			            $$.traducao = $4.traducao + "\tstrcpy(" + buscaNoMapa($2.variavel).nome + ", " + $4.variavel + ");\n";
+			            (*pilhaDeMapas.front())[$2.variavel].tamanho = $4.tamanho;
+					}
+			        else
+			            $$.traducao = $4.traducao + "\t" + buscaNoMapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+		        }
 
             }
+            
             ;
             
 ATRIBUICAO	: TK_ID '=' E
 			{
-				if($$.tipo == "string")
-				{
-					$$.traducao = $3.traducao + "\tstrcpy(" + buscaNoMapa($1.variavel).nome + ", " + $3.variavel + ");\n";
-					(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
-				}
+			
+				if($1.tipo != $3.tipo) // então precisa fazer casting
+                {
+                	string tipo_cast = getTipo($1.tipo, "=", $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
+                	$$.traducao = $3.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
+                	$$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + temp_cast + ";\n";
+                }
+                
+                else
+                {
+					if($$.tipo == "string")
+					{
+						$$.traducao = $3.traducao + "\tstrcpy(" + buscaNoMapa($1.variavel).nome + ", " + $3.variavel + ");\n";
+						(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
+					}
 				
-				else
-					$$.traducao = $3.traducao + "\t" + buscaNoMapa($1.variavel).nome + " = " + $3.variavel + ";\n";
-					
+					else
+						$$.traducao = $3.traducao + "\t" + buscaNoMapa($1.variavel).nome + " = " + $3.variavel + ";\n";
+				}	
 			}
 			;
 			
@@ -186,47 +200,70 @@ COMANDO 	: E ';'
 				if ($6.traducao != "")
 					$$.traducao += "\tgoto " + label_fim_else + ";\n\n\t" + label_fim_if + ":\n" + $6.traducao + "\n\t" +label_fim_else + ":\n";
 				else
-					$$.traducao += "\t\n" + label_fim_if + ":\n";
+					$$.traducao += "\n\t" + label_fim_if + ":\n";
 
 			}
 			
 			/* while */
-			| TK_WHILE '(' E ')' COMANDO
+			| LACO '(' E ')' COMANDO
 			{
 				string negacao_condicao = getID();
-				string label_inicio_while = geraLabel();
-				string label_fim_while = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo};
 				
-				$$.traducao = "\n\n\t" + label_inicio_while + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_while + ";\n" + $5.traducao + "\tgoto " + label_inicio_while + ";\n\n\t" + label_fim_while + ":\n";
+				$$.traducao = "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n" + $5.traducao + "\tgoto " + pilhaDeLabelsInicio.front() + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
+				
+				desempilha_labels();
 			}
 			
 			/* do while */
-			| TK_DO COMANDO TK_WHILE '(' E ')' ';'
+			| LACO COMANDO TK_WHILE '(' E ')' ';'
 			{
-				string label_inicio_dowhile = geraLabel();
-				
-				$$.traducao = "\n\n\t" + label_inicio_dowhile + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + label_inicio_dowhile + ";\n\n";
+				$$.traducao = "\n\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + pilhaDeLabelsInicio.front() + ";\n\n";
+				desempilha_labels();
 			}
 			
-			| TK_FOR '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
+			/* for */
+			| LACO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
 			{
-				string label_inicio_for = geraLabel();
-				string label_fim_for = geraLabel();
 				string negacao_condicao = getID();
+				string label_inicio = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $5.tipo};
 				
-				
 				$$.traducao = $3.traducao;
-				$$.traducao += "\n\t" + label_inicio_for + ":\n";
+				$$.traducao += "\n\t" + label_inicio + ":\n";
 				$$.traducao += $5.traducao + "\t" + negacao_condicao + " = !(" + $5.variavel + ");\n\t";
-				$$.traducao += "if(" + negacao_condicao + ") goto " + label_fim_for + ";\n";
-				$$.traducao += $9.traducao + $7.traducao;
-				$$.traducao += "\tgoto " + label_inicio_for + ";\n\n\t" + label_fim_for + ":\n";
+				$$.traducao += "if(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n";
+				$$.traducao += $9.traducao + "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $7.traducao;
+				$$.traducao += "\tgoto " + label_inicio + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
 				
+				desempilha_labels();
+				
+			}
+			
+			/* switch */
+			|TK_SWITCH '(' E ')' COMANDO
+			{
+			
+			}
+			
+			/* case */
+			| TK_CASE E TK_DOISPONTOS COMANDO
+			{
+			
+			}
+			
+			| TK_CONTINUE ';'
+			{
+				$$.traducao = "\tgoto " + pilhaDeLabelsInicio.front() + ";\n";
+			}
+			
+			| TK_BREAK ';'
+			{
+				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
 			
             ;
+
 
 FOR_PARAM	: DECLARACAO
 			
@@ -235,7 +272,16 @@ FOR_PARAM	: DECLARACAO
 			| E
 
 			;
-
+			
+LACO		: TK_WHILE | TK_DO | TK_FOR
+			{
+				string label_inicio_while = geraLabel();
+				string label_fim_while = geraLabel();
+				
+				pilhaDeLabelsInicio.push_front(label_inicio_while);
+				pilhaDeLabelsFim.push_front(label_fim_while);
+			}
+			;
 
 
 //--------------------------------------------------------------------------------------
@@ -354,6 +400,13 @@ E 			: '('E')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
+			| TK_NEG E
+			{
+				$$.variavel = getID();
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};		
+				$$.traducao = $2.traducao + "\t" + $$.variavel + " = !(" + $2.variavel + ");\n";
+			}			
+			
 			| VALOR
 			{	
 				$$.variavel = getID();
@@ -404,12 +457,13 @@ E 			: '('E')'
 			| TK_ID TK_MM
 			{
 				string var_temp = getID();
+				string var_soma = getID();
 				string var_incremento = buscaNoMapa($1.variavel).nome;
 				char tipo_op = $2.traducao[0];
 				(*pilhaDeMapas.front())[var_temp] = {var_temp, "int"};
-				$$.variavel = getID();
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "int"};
-				$$.traducao = "\t" + var_temp + " = 1;\n\t" + $$.variavel + " = " + var_incremento + " " + tipo_op + " " + var_temp + ";\n\t" + var_incremento + " = " + $$.variavel + ";\n";
+				(*pilhaDeMapas.front())[var_soma] = {var_soma, "int"};
+				$$.variavel = var_incremento;
+				$$.traducao = "\t" + var_temp + " = 1;\n\t" + var_soma + " = " + var_incremento + " " + tipo_op + " " + var_temp + ";\n\t" + var_incremento + " = " + var_soma + ";\n";
 			}
 			
 			| TK_ID
@@ -476,11 +530,14 @@ string getTipo(string var1, string op, string var2)
     tipo_retorno = tab_tipos[var1+op+var2];
     if(tipo_retorno != "")
 		return tipo_retorno;
-		
-	tipo_retorno = tab_tipos[var2+op+var1];
-	if(tipo_retorno != "")
-		return tipo_retorno;
 
+	if(op != "=") // atribuicao é simétrica
+	{
+		tipo_retorno = tab_tipos[var2+op+var1];
+		if(tipo_retorno != "")
+			return tipo_retorno;
+	}
+	
 	cout << "Erro: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
 	exit(EXIT_FAILURE);
 }
@@ -565,6 +622,23 @@ map<string, string> cria_tabela_tipos()
     tabela_tipos["int&&int"] = "int";
     tabela_tipos["int||int"] = "int";
     
+    
+    //casting
+    tabela_tipos["int=float"] = "int";
+    tabela_tipos["int=char"] = "int";
+    tabela_tipos["int=unsigned short int"] = "int";
+    
+    tabela_tipos["float=int"] = "float";
+    tabela_tipos["float=unsigned short int"] = "float";
+    
+    tabela_tipos["char=int"] = "char";
+    
+    tabela_tipos["string=char"] = "string";
+    
+	tabela_tipos["float=int"] = "float";
+
+    tabela_tipos["unsigned short int=int"] = "unsigned short int";	
+    
     return tabela_tipos;   
 }
 
@@ -600,3 +674,16 @@ struct variavel buscaNoMapa(string var)
 	cout << "Variável \"" << var << "\" não declarada nesse escopo" << endl;
 	exit(0);
 }
+
+void desempilha_labels()
+{
+	pilhaDeLabelsFim.pop_front();
+	pilhaDeLabelsInicio.pop_front();
+}
+
+
+/*
+
+http://www.quut.com/c/ANSI-C-grammar-y.html
+
+*/
