@@ -111,13 +111,13 @@ DECLARACOES	: DECLARACOES DECLARACAO
 			}
 			;
 
-DECLARACAO	: TIPO TK_ID ';'
+DECLARACAO	: TIPO TK_ID
             {
                 (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};
                 $$.traducao = "";
             }
             
-            | TIPO TK_ID '=' E ';'
+            | TIPO TK_ID '=' E
             {
 				(*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
                 
@@ -172,6 +172,9 @@ ATRIBUICAO	: TK_ID '=' E
 			;
 			
 ELSE		: TK_ELSE COMANDO
+			{
+				$$.traducao = $2.traducao;
+			}
 			
 			|
 			{
@@ -185,7 +188,7 @@ COMANDO 	: E ';'
             
             | ATRIBUICAO ';'
 
-			| DECLARACAO
+			| DECLARACAO ';'
 			
 			/* if */
 			| TK_IF '(' E ')' COMANDO ELSE
@@ -205,35 +208,34 @@ COMANDO 	: E ';'
 			}
 			
 			/* while */
-			| LACO '(' E ')' COMANDO
+			| TK_WHILE ABRE_LACO '(' E ')' COMANDO
 			{
 				string negacao_condicao = getID();
-				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo};
-				
-				$$.traducao = "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $3.traducao + "\t" + negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n" + $5.traducao + "\tgoto " + pilhaDeLabelsInicio.front() + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $4.tipo};
+				$$.traducao = "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $4.traducao + "\t" + negacao_condicao + " = !(" + $4.variavel + ");\n\tif(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n" + $6.traducao + "\tgoto " + pilhaDeLabelsInicio.front() + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
 				
 				desempilha_labels();
 			}
 			
 			/* do while */
-			| LACO COMANDO TK_WHILE '(' E ')' ';'
+			| TK_DO ABRE_LACO COMANDO TK_WHILE '(' E ')' ';'
 			{
-				$$.traducao = "\n\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $2.traducao + $5.traducao + "\tif(" + $5.variavel + ") goto " + pilhaDeLabelsInicio.front() + ";\n\n";
+				$$.traducao = "\n\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $3.traducao + $6.traducao + "\tif(" + $6.variavel + ") goto " + pilhaDeLabelsInicio.front() + ";\n\n";
 				desempilha_labels();
 			}
 			
 			/* for */
-			| LACO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
+			| TK_FOR ABRE_LACO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
 			{
 				string negacao_condicao = getID();
 				string label_inicio = geraLabel();
-				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $5.tipo};
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $6.tipo};
 				
-				$$.traducao = $3.traducao;
+				$$.traducao = $4.traducao;
 				$$.traducao += "\n\t" + label_inicio + ":\n";
-				$$.traducao += $5.traducao + "\t" + negacao_condicao + " = !(" + $5.variavel + ");\n\t";
+				$$.traducao += $6.traducao + "\t" + negacao_condicao + " = !(" + $6.variavel + ");\n\t";
 				$$.traducao += "if(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n";
-				$$.traducao += $9.traducao + "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $7.traducao;
+				$$.traducao += $10.traducao + "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $8.traducao;
 				$$.traducao += "\tgoto " + label_inicio + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
 				
 				desempilha_labels();
@@ -241,7 +243,7 @@ COMANDO 	: E ';'
 			}
 			
 			/* switch */
-			|TK_SWITCH '(' E ')' COMANDO
+			| TK_SWITCH '(' E ')' COMANDO
 			{
 			
 			}
@@ -273,21 +275,15 @@ FOR_PARAM	: DECLARACAO
 
 			;
 			
-LACO		: TK_WHILE | TK_DO | TK_FOR
+ABRE_LACO	: 
 			{
 				string label_inicio_while = geraLabel();
 				string label_fim_while = geraLabel();
-				
+
 				pilhaDeLabelsInicio.push_front(label_inicio_while);
-				pilhaDeLabelsFim.push_front(label_fim_while);
+				pilhaDeLabelsFim.push_front(label_fim_while);	
 			}
 			;
-
-
-//--------------------------------------------------------------------------------------
-
-
-
 
 E 			: '('E')' 
 			{
@@ -423,31 +419,28 @@ E 			: '('E')'
 			
 			| E TK_OP_REL E
 			{	
-				$$.variavel = getID();
-				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
+				$$.variavel = getID();			
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
 				
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
-					
+					string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
+                	
 					if($1.tipo != tipo_cast)
 					{
 						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
-						$1.tipo = tipo_retorno;
 					}
 					else
 					{
 						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
-						$3.tipo = tipo_retorno;
 					}
 				}
 				
-				$$.tipo = tipo_retorno;
+				$$.tipo = "unsigned short int";
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
@@ -579,48 +572,47 @@ map<string, string> cria_tabela_tipos()
     tabela_tipos["int/int"] = "int";
     tabela_tipos["int/float"] = "float";
     tabela_tipos["float/float"] = "float";
-      
-    tabela_tipos["int>int"] = "int";
-    tabela_tipos["float>float"] = "int";
-    tabela_tipos["float>int"] = "int";
-    tabela_tipos["char>char"] = "int";    
-	tabela_tipos["string>string"] = "int"; //@ TODO
+    
+	// Para operadores relacionais e atribuicao, a tabela da o tipo de cast6  
+    //tabela_tipos["int>int"] = "int";
+    //tabela_tipos["float>float"] = "int";
+    tabela_tipos["float>int"] = "float";
+    //tabela_tipos["char>char"] = "int";    
+	//tabela_tipos["string>string"] = "int"; //@ TODO
 
-    tabela_tipos["int>=int"] = "int";
-    tabela_tipos["float>=float"] = "int";
-    tabela_tipos["float>=int"] = "int";
-    tabela_tipos["char>=char"] = "int";
-    tabela_tipos["string>=string"] = "int"; //@ TODO
+    //tabela_tipos["int>=int"] = "int";
+    //tabela_tipos["float>=float"] = "int";
+    tabela_tipos["float>=int"] = "float";
+    //tabela_tipos["char>=char"] = "int";
+    //tabela_tipos["string>=string"] = "int"; //@ TODO
     
-    tabela_tipos["int<int"] = "int";
-    tabela_tipos["float<float"] = "int";
-    tabela_tipos["float<int"] = "int";
-    tabela_tipos["char<char"] = "int";
-    tabela_tipos["string<string"] = "int";
+    //tabela_tipos["int<int"] = "int";
+    //tabela_tipos["float<float"] = "";
+    tabela_tipos["float<int"] = "float";
+    //tabela_tipos["char<char"] = "int";
+    //tabela_tipos["string<string"] = "int";
     
-    tabela_tipos["int<=int"] = "int";
-    tabela_tipos["float<=float"] = "int";
-    tabela_tipos["float<=int"] = "int";
-    tabela_tipos["char<=char"] = "int";
-    tabela_tipos["string<=string"] = "int"; //@ TODO
+    //tabela_tipos["int<=int"] = "int";
+    //tabela_tipos["float<=float"] = "int";
+    tabela_tipos["float<=int"] = "float";
+    //tabela_tipos["char<=char"] = "int";
+    //tabela_tipos["string<=string"] = "int"; //@ TODO
     
-    tabela_tipos["int==int"] = "int";
-    tabela_tipos["float==float"] = "int";
-    tabela_tipos["float==int"] = "int";
-    tabela_tipos["char==char"] = "int";
-    tabela_tipos["string==string"] = "int";
+    //tabela_tipos["int==int"] = "int";
+    //tabela_tipos["float==float"] = "int";
+    tabela_tipos["float==int"] = "float";
+    //tabela_tipos["char==char"] = "int";
+    //tabela_tipos["string==string"] = "int";
     
-    tabela_tipos["int!=int"] = "int";
-    tabela_tipos["float!=float"] = "int";
-    tabela_tipos["float!=int"] = "int";
-    tabela_tipos["char!=char"] = "int";
-    tabela_tipos["string!=string"] = "int";
+    //tabela_tipos["int!=int"] = "int";
+    //tabela_tipos["float!=float"] = "int";
+    tabela_tipos["float!=int"] = "float";
+    //tabela_tipos["char!=char"] = "int";
+    //tabela_tipos["string!=string"] = "int";
     
-    tabela_tipos["int&&int"] = "int";
-    tabela_tipos["int||int"] = "int";
+    //tabela_tipos["int&&int"] = "int";
+    //tabela_tipos["int||int"] = "int";
     
-    
-    //casting
     tabela_tipos["int=float"] = "int";
     tabela_tipos["int=char"] = "int";
     tabela_tipos["int=unsigned short int"] = "int";
