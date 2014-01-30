@@ -295,31 +295,31 @@ E 			: '('E')'
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
 			}
-			
+
 			| E TK_SOMA_SUB E
 			{	
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
-								
-				/*<casting>
-				if($1.tipo != $3.tipo)
+
+				if($1.tipo != $3.tipo) // então precisa casting
 				{
-					string temp_cast = getID();
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
-					if($1.tipo != getTipoCast($1.tipo, $3.tipo))
+					if($1.tipo != tipo_cast)
 					{
-						$1.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $1.variavel + ";\n";
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
 						$1.tipo = tipo_retorno;
 					}
 					else
 					{
-						$3.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $3.variavel + ";\n";
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 						$3.tipo = tipo_retorno;
 					}
 				}
-				</casting> */
 				
 				if(tipo_retorno == "string")
 				{
@@ -345,25 +345,26 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				//<casting>
-				if($1.tipo != $3.tipo)
+				if($1.tipo != $3.tipo) // então precisa casting
 				{
-					string temp_cast = getID();
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
-					if($1.tipo != getTipoCast($1.tipo, $3.tipo))
+					if($1.tipo != tipo_cast)
 					{
-						$1.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $1.variavel + ";\n";
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
 						$1.tipo = tipo_retorno;
 					}
 					else
 					{
-						$3.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $3.variavel + ";\n";
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 						$3.tipo = tipo_retorno;
 					}
 				}
-				//</casting>
+				
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
@@ -374,27 +375,25 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				/*
-				//<casting>
-				if($1.tipo != $3.tipo)
+				if($1.tipo != $3.tipo) // então precisa casting
 				{
-					string temp_cast = getID();
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
-					if($1.tipo != getTipoCast($1.tipo, $3.tipo))
+					if($1.tipo != tipo_cast)
 					{
-						$1.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $1.variavel + ";\n";
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
 						$1.tipo = tipo_retorno;
 					}
 					else
 					{
-						$3.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $3.variavel + ";\n";
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 						$3.tipo = tipo_retorno;
 					}
 				}
-				//</casting>
-				*/
 				
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
@@ -428,27 +427,25 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				/*
-				//<casting>
-				if($1.tipo != $3.tipo)
+				if($1.tipo != $3.tipo) // então precisa casting
 				{
-					string temp_cast = getID();
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
-					if($1.tipo != getTipoCast($1.tipo, $3.tipo))
+					if($1.tipo != tipo_cast)
 					{
-						$1.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $1.variavel + ";\n";
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
 						$1.variavel = temp_cast;
 						$1.tipo = tipo_retorno;
 					}
 					else
 					{
-						$3.traducao += "\t" + tipo_retorno + " " + temp_cast + " = " + "(" + getTipoCast($1.tipo, $3.tipo) + ")" + $3.variavel + ";\n";
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 						$3.tipo = tipo_retorno;
 					}
 				}
-				//</casting>
-				*/
 				
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";

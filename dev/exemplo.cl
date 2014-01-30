@@ -1,5 +1,6 @@
 int main()
 {
-	boolean i;
-	i = 2;
+	float j;
+	j = 2 < 2.5;
+	
 }
