@@ -1,5 +1,7 @@
-all:
-	clear
-	flex leitor_variavel.l
-	gcc -o leitor lex.yy.c -lfl
-	./leitor < primeiro_programa.c
+all: 	
+		clear
+		lex lexica.l
+		yacc -d sintatica.y
+		g++ -o glf y.tab.c -lfl -std=c++0x
+
+		./glf < exemplo.cl
