@@ -5,6 +5,7 @@
 #include <map>
 #include <utility>
 #include <list>
+#include <vector>
 
 #define YYSTYPE atributos
 
@@ -40,6 +41,11 @@ void desempilha_mapa();
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
 string declaracoes;
+
+vector<YYSTYPE> temporarias;
+vector<string> string_case;
+string string_cases = "";
+
 
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
@@ -251,13 +257,29 @@ COMANDO 	: E ';'
 			/* switch */
 			| TK_SWITCH '(' E ')' COMANDO
 			{
-			
+				$$.traducao = $3.traducao;
+				
+  				for(int i = 0; i < temporarias.size(); i++)
+  				{
+  					string var_comparacao = getID();
+  					string label_case = geraLabel();
+  					(*pilhaDeMapas.front())[var_comparacao] = {var_comparacao, "unsigned short int"};
+  					
+					$$.traducao += temporarias[i].traducao + "\t" + var_comparacao + " = " + temporarias[i].variavel + " == " + $3.variavel + ";\n";
+					$$.traducao += "\tif(" + var_comparacao + ") goto " + label_case + ";\n";
+					string_cases += "\n\t" + label_case + ":\n" + string_case[i];
+				}
+					 
+				$$.traducao += string_cases;
 			}
 			
 			/* case */
-			| TK_CASE E TK_DOISPONTOS COMANDO
+			| TK_CASE VALOR TK_DOISPONTOS COMANDO
 			{
-			
+
+				temporarias.push_back($2);
+				string_case.push_back($4.traducao);			
+				
 			}
 			
 			| TK_CONTINUE ';'
@@ -409,11 +431,7 @@ E 			: '('E')'
 			}			
 			
 			| VALOR
-			{	
-				$$.variavel = getID();
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
-				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
-			}
+			
 			
 			| TK_STRING
 			{	
@@ -474,7 +492,13 @@ E 			: '('E')'
 			
 TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL;
 
-VALOR		: TK_NUM | TK_REAL | TK_CHAR;
+VALOR		: TK_NUM 
+			{
+				$$.variavel = getID();
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
+				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
+			}
+			| TK_REAL | TK_CHAR;
 
 //OPERADOR	: TK_OP_REL | TK_OP_LOG;
 
@@ -494,6 +518,7 @@ int main( int argc, char* argv[] )
 
 void yyerror( string MSG )
 {
+	
 	cout << MSG << endl;
 	exit (0);
 }
