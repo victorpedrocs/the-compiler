@@ -35,6 +35,7 @@ void getDeclaracoes(mapa* mapa_variaveis);
 struct variavel buscaNoMapa(string var);
 string geraLabel();
 void desempilha_labels();
+void desempilha_mapa();
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -62,8 +63,7 @@ list<string> pilhaDeLabelsFim;
 
 S			: ABRE_ESCOPO DECLARACOES MAIN
 			{
-				getDeclaracoes(pilhaDeMapas.front());
-				pilhaDeMapas.pop_front();
+				desempilha_mapa();
 				cout << "/*Compilador C'*/\n" << "#include<stdio.h>\n#include<string.h>\nint main(void)\n{\n" << declaracoes << "\t//-------------\n" << $2.traducao << $3.traducao << "\treturn 0;\n}" << endl; 
 			}
 			;
@@ -77,8 +77,7 @@ MAIN		: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
 			{
 				$$.traducao = $3.traducao;
-				getDeclaracoes(pilhaDeMapas.front());		// guarda as declarações do mapa que vai ser desempilhado
-				pilhaDeMapas.pop_front();					// Desempilha o mapa
+				desempilha_mapa();
 			}
 			;
 			
@@ -189,6 +188,11 @@ COMANDO 	: E ';'
             | ATRIBUICAO ';'
 
 			| DECLARACAO ';'
+
+			| ';'
+			{
+				$$.traducao = "";
+			}
 			
 			/* if */
 			| TK_IF '(' E ')' COMANDO ELSE
@@ -225,20 +229,22 @@ COMANDO 	: E ';'
 			}
 			
 			/* for */
-			| TK_FOR ABRE_LACO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
+			| TK_FOR ABRE_LACO ABRE_ESCOPO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
 			{
 				string negacao_condicao = getID();
 				string label_inicio = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $6.tipo};
 				
-				$$.traducao = $4.traducao;
+				$$.traducao = $5.traducao;
 				$$.traducao += "\n\t" + label_inicio + ":\n";
-				$$.traducao += $6.traducao + "\t" + negacao_condicao + " = !(" + $6.variavel + ");\n\t";
+				$$.traducao += $7.traducao + "\t" + negacao_condicao + " = !(" + $7.variavel + ");\n\t";
 				$$.traducao += "if(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n";
-				$$.traducao += $10.traducao + "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $8.traducao;
+				$$.traducao += $11.traducao + "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $9.traducao;
 				$$.traducao += "\tgoto " + label_inicio + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
 				
 				desempilha_labels();
+				desempilha_mapa();
+				
 				
 			}
 			
@@ -416,7 +422,7 @@ E 			: '('E')'
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
 			}
-			
+
 			| E TK_OP_REL E
 			{	
 				$$.variavel = getID();			
@@ -641,11 +647,11 @@ void getDeclaracoes(mapa* mapa_variaveis)
 			ss << "\t" << "CHAVE COM ERRO:" << iterator->first << ";\n";
 			
 		if(iterator->second.tipo == "string")
-			ss << "\t" << + "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
+			ss << "\t" << "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
 		else
 			ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << ";\n";
 	}
-	
+
 	declaracoes += ss.str();
 	
 }
@@ -668,6 +674,12 @@ void desempilha_labels()
 {
 	pilhaDeLabelsFim.pop_front();
 	pilhaDeLabelsInicio.pop_front();
+}
+
+void desempilha_mapa()
+{
+	getDeclaracoes(pilhaDeMapas.front());
+	pilhaDeMapas.pop_front();
 }
 
 
