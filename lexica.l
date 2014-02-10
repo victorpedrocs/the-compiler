@@ -30,6 +30,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "return"    {return TK_RETURN;}
 ":"			{return TK_DOISPONTOS;}
 
+
 "if"		{return TK_IF;}
 "else"		{return TK_ELSE;}
 "while"		{return TK_WHILE;}

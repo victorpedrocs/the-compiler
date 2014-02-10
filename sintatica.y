@@ -40,20 +40,24 @@ void desempilha_mapa();
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
-string declaracoes;
+map<string, string> tab_funcoes;
 
-vector<YYSTYPE> temporarias;
-vector<string> string_case;
+string declaracoes;
 string string_cases = "";
 
+vector<YYSTYPE> temporarias;
+vector<YYSTYPE> parametros;
+vector<string> string_case;
 
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
 list<string> pilhaDeLabelsFim;
 
+
+
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_RETURN
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_RETURN 
 %token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE
 %token TK_FIM TK_ERROR
 
@@ -118,7 +122,7 @@ DECLARACOES	: DECLARACOES DECLARACAO
 
 DECLARACAO	: TIPO TK_ID
             {
-                (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};
+                (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};      
                 $$.traducao = "";
             }
             
@@ -143,7 +147,8 @@ DECLARACAO	: TIPO TK_ID
 			            (*pilhaDeMapas.front())[$2.variavel].tamanho = $4.tamanho;
 					}
 			        else
-			            $$.traducao = $4.traducao + "\t" + buscaNoMapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+			      		$$.traducao = $4.traducao + "\t" + buscaNoMapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+			        
 		        }
 
             }
@@ -197,7 +202,6 @@ COMANDO 	: E ';'
 
             | TK_PRINT '(' TK_ID ')' ';'
             {
-                //cout << "entrei aqui" << endl;
                 $$.traducao = "\tcout << " + buscaNoMapa($3.variavel).nome + " << endl;\n";
             }
             
@@ -261,8 +265,7 @@ COMANDO 	: E ';'
 				
 				desempilha_labels();
 				desempilha_mapa();
-				
-				
+			
 			}
 			
 			/* switch */
@@ -302,44 +305,87 @@ COMANDO 	: E ';'
 			{
 				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
-						
+			
+			//Declaração da Função
+			| TIPO TK_ID '('F_PARAMS')'';'
+			{	
+				string temp_funcao = getID();
+				tab_funcoes[$2.variavel] = temp_funcao; 
+				
+				$$.traducao = $1.tipo + " " + temp_funcao + '(';
+				
+				
+			    $$.traducao += parametros[0].tipo + " " + parametros[0].variavel;
+			    for(int i = 1; i < parametros.size(); i++)
+			    	$$.traducao += ", " + parametros[i].tipo + " " + parametros[i].variavel;
+			    	
+				$$.traducao += ");\n";
+				parametros.clear();
+				
+			}
 			//Chamada da Função
-			|TK_ID '=' TK_ID '(' F_PARAM F_PARAMS ')'';'
+			|TK_ID '=' TK_ID '('F_PARAMS')'';'
 			{
-			    $$.traducao = $5.traducao + $6.traducao + "\n"; //Criação das variáveis quando necessárias
-			    $$.traducao += "\t" + $1.variavel + "=" + $3.variavel + "(";
+			    $$.traducao = $5.traducao;
+			    $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
 			    
-			    //Parâmetros HOW TO
-			    $$.traducao +=  $5.variavel + ");\n";
+			    
+			    $$.traducao += parametros[0].variavel;
+			    for(int i = 1; i < parametros.size(); i++)
+			    	$$.traducao += ", " + parametros[i].variavel;
+			    	
+				$$.traducao += ");\n";
+				parametros.clear();
 			}
             ;
 
-            //Resolvendo os parametros
-F_PARAM   : E
-            {
-                $$.variavel = $1.variavel;
-				$$.traducao = $1.traducao;
-				$$.tipo = $1.tipo;  
-            }
-            
-            | E TK_VIRGULA F_PARAM
-            {
-                $$.variavel = $1.variavel;
-				$$.traducao = $1.traducao;
+
+                       
+F_PARAMS    : F_PARAMS ',' E
+             {
+             	$$.traducao = $1.traducao + $3.traducao;
+             	$$.variavel = $3.variavel;
+				$$.tipo = $3.tipo;
+				
+				
+				parametros.push_back($3);//Adicionando a lista de parâmetros da função
+             }
+             
+             | E
+             {
+             	$$.traducao = $1.traducao;
+             	$$.variavel = $1.variavel;
 				$$.tipo = $1.tipo;
-            }
-    
+				
+				
+				parametros.push_back($1);
+             }
+          	
+          	| F_PARAMS ',' TIPO TK_ID
+          	{
+          		
+          		$$.traducao = $1.traducao + $4.traducao;
+             	$$.variavel = getID();
+				$$.tipo = $4.tipo;
+				
+				parametros.push_back($$);
+          	}
+          	
+          	| TIPO TK_ID
+          	{
+          	
+				
+          		$$.traducao = $1.traducao;
+             	$$.variavel = getID();
+				$$.tipo = $1.tipo;
+				
+				
+				parametros.push_back($$);	
+          	}
+          	
             ;
             
-F_PARAMS    : F_PARAM
-            
-            |
-            
-            ;
-            ;
-            
-
-
+ 
 FOR_PARAM	: DECLARACAO
 			
 			| ATRIBUICAO
@@ -364,15 +410,6 @@ E 			: '('E')'
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
 			}
-			
-			/*
-			| E TK_VIRGULA
-			{
-			    $$.variavel = $1.variavel;
-				$$.traducao = $1.traducao;
-				$$.tipo = $1.tipo;
-			}
-			*/
 			
 			| E TK_SOMA_SUB E
 			{	

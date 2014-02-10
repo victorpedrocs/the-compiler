@@ -8,10 +8,11 @@ int main(void)
 {
 	int $temp0;
 	int $temp2;
+	int $temp3;
 	int $temp1;
 	//-------------
-	$temp0 = 1;
+	$temp0 = 2;
 	$temp1 = $temp0;
-	return $temp2;
+int $temp6(int $temp4, int $temp5);
 
 }
