@@ -302,8 +302,42 @@ COMANDO 	: E ';'
 			{
 				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
-			
+						
+			//Chamada da Função
+			|TK_ID '=' TK_ID '(' F_PARAM F_PARAMS ')'';'
+			{
+			    $$.traducao = $5.traducao + $6.traducao + "\n"; //Criação das variáveis quando necessárias
+			    $$.traducao += "\t" + $1.variavel + "=" + $3.variavel + "(";
+			    
+			    //Parâmetros HOW TO
+			    $$.traducao +=  $5.variavel + ");\n";
+			}
             ;
+
+            //Resolvendo os parametros
+F_PARAM   : E
+            {
+                $$.variavel = $1.variavel;
+				$$.traducao = $1.traducao;
+				$$.tipo = $1.tipo;  
+            }
+            
+            | E TK_VIRGULA F_PARAM
+            {
+                $$.variavel = $1.variavel;
+				$$.traducao = $1.traducao;
+				$$.tipo = $1.tipo;
+            }
+    
+            ;
+            
+F_PARAMS    : F_PARAM
+            
+            |
+            
+            ;
+            ;
+            
 
 
 FOR_PARAM	: DECLARACAO
