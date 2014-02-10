@@ -7,7 +7,7 @@
 ESPACO [ \t]
 DIGITO [0-9]
 LETRA [A-Za-z]
-CARACTER_ESP [?!*@#$%&=_-]
+CARACTER_ESP [?!*@#$:%&=_-]
 
 DELIM {ESPACO}+
 NUM {DIGITO}+
@@ -27,6 +27,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "break"		{return TK_BREAK;}
 "switch"	{return TK_SWITCH;}
 "case"		{return TK_CASE;}
+"return"    {return TK_RETURN;}
 ":"			{return TK_DOISPONTOS;}
 
 "if"		{return TK_IF;}
@@ -60,6 +61,7 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
 "!"		{ yylval.traducao = yytext; return TK_NEG; }
 
+"print"    { return TK_PRINT; }
 
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 {ID}		{ yylval.variavel = yytext; return TK_ID; }

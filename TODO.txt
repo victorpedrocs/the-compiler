@@ -1,9 +1,13 @@
 * casting
 * múltiplos operadores lógicos/relacionais
-* switch~case
-* string (!!!) concatenação
-* compilar o código intermediário gerado (com impressão)
+* switch~case == OK
+* string (!!!) concatenação = (PARECE ESTAR FUNCIONANDO, RISOS)
+* compilar o código intermediário gerado (com impressão) = OK
 * comentários
-* escopo for DONE
+* escopo for OK
 * for vazio OK
 * incremento/decremento
+* return = OK
+* funcao
+* entrada do teclado
+* vetores

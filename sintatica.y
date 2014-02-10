@@ -53,7 +53,7 @@ list<string> pilhaDeLabelsFim;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_RETURN
 %token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE
 %token TK_FIM TK_ERROR
 
@@ -70,7 +70,7 @@ list<string> pilhaDeLabelsFim;
 S			: ABRE_ESCOPO DECLARACOES MAIN
 			{
 				desempilha_mapa();
-				cout << "/*Compilador C'*/\n" << "#include<stdio.h>\n#include<string.h>\nint main(void)\n{\n" << declaracoes << "\t//-------------\n" << $2.traducao << $3.traducao << "\treturn 0;\n}" << endl; 
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n\n" << "int main(void)\n{\n" << declaracoes << "\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
 			}
 			;
 
@@ -195,6 +195,17 @@ COMANDO 	: E ';'
 
 			| DECLARACAO ';'
 
+            | TK_PRINT '(' TK_ID ')' ';'
+            {
+                //cout << "entrei aqui" << endl;
+                $$.traducao = "\tcout << " + buscaNoMapa($3.variavel).nome + " << endl;\n";
+            }
+            
+            | TK_RETURN E ';'
+            {
+                $$.traducao = "\treturn " + $2.variavel + ";\n";
+            }
+            
 			| ';'
 			{
 				$$.traducao = "";
@@ -319,7 +330,16 @@ E 			: '('E')'
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
 			}
-
+			
+			/*
+			| E TK_VIRGULA
+			{
+			    $$.variavel = $1.variavel;
+				$$.traducao = $1.traducao;
+				$$.tipo = $1.tipo;
+			}
+			*/
+			
 			| E TK_SOMA_SUB E
 			{	
 				$$.variavel = getID();
