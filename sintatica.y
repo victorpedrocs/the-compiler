@@ -312,7 +312,7 @@ COMANDO 	: E ';'
 				string temp_funcao = getID();
 				tab_funcoes[$2.variavel] = temp_funcao; 
 				
-				$$.traducao = $1.tipo + " " + temp_funcao + '(';
+				$$.traducao = "\t" + $1.tipo + " " + temp_funcao + '(';
 				
 				
 			    $$.traducao += parametros[0].tipo + " " + parametros[0].variavel;
@@ -589,7 +589,19 @@ VALOR		: TK_NUM
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
-			| TK_REAL | TK_CHAR;
+			| TK_REAL
+			{
+				$$.variavel = getID();
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
+				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
+			}
+			| TK_CHAR
+			{
+				$$.variavel = getID();
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
+				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
+			}
+			;
 
 //OPERADOR	: TK_OP_REL | TK_OP_LOG;
 
