@@ -1,15 +1,21 @@
+=============== TODO ===============
+
 * casting
 * múltiplos operadores lógicos/relacionais
-* switch~case == OK
-* string (!!!) concatenação = (PARECE ESTAR FUNCIONANDO, RISOS)
-* compilar o código intermediário gerado (com impressão) = OK
-* comentários
-* escopo for OK
-* for vazio OK
-* if/else shift reduce = OK
 * incremento/decremento
-* return = OK
 * funcao
-* entrada do teclado = OK
 * vetores
 * redeclaração de variáveis
+
+
+=============== DONE ===============
+
+* switch~case
+* entrada do teclado
+* string (!!!) concatenação
+* compilar o código intermediário gerado (com impressão)
+* escopo for
+* for vazio
+* resolver shift/reduce do if else
+* return
+* comentários

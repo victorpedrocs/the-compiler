@@ -1,3 +1,5 @@
+/* ola */
+
 int main()
 {
 	int i = 32;

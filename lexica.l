@@ -15,6 +15,7 @@ REAL {NUM}+("."{NUM}+)?
 CHAR \'({LETRA}|{NUM})\'
 ID _?({LETRA}|{NUM}|_)*
 STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
+COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 
 %%
 
@@ -29,6 +30,8 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "case"		{return TK_CASE;}
 "return"    {return TK_RETURN;}
 ":"			{return TK_DOISPONTOS;}
+"print"	{ return TK_PRINT; }
+"scan"	{ return TK_SCAN; }
 
 
 "if"		{return TK_IF;}
@@ -62,14 +65,12 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
 "!"		{ yylval.traducao = yytext; return TK_NEG; }
 
-"print"	{ return TK_PRINT; }
-"scan"	{ return TK_SCAN; }
-
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }
 {CHAR}		{ yylval.traducao = yytext; yylval.tipo = "char"; return TK_CHAR; }
 {STRING} 	{ yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
+{COMENTARIO}	{}
 
 .		{ *yytext; }
 
