@@ -34,6 +34,7 @@ string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
 void getDeclaracoes(mapa* mapa_variaveis);
 struct variavel buscaNoMapa(string var);
+string buscaFuncao(string nome_funcao);
 string geraLabel();
 void desempilha_labels();
 void desempilha_mapa();
@@ -42,11 +43,11 @@ mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
 map<string, string> tab_funcoes;
 
-string declaracoes;
-string string_cases = "";
+string declaracoes, string_cases, funcoes;
+
 
 vector<YYSTYPE> temporarias;
-vector<YYSTYPE> parametros;
+vector<struct variavel> parametros;
 vector<string> string_case;
 
 list<mapa*> pilhaDeMapas;
@@ -74,7 +75,7 @@ list<string> pilhaDeLabelsFim;
 S			: ABRE_ESCOPO DECLARACOES MAIN
 			{
 				desempilha_mapa();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n\n" << "int main(void)\n{\n" << declaracoes << "\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n\n" << "int main(void)\n{\n" << declaracoes << funcoes <<"\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
 			}
 			;
 
@@ -306,39 +307,64 @@ COMANDO 	: E ';'
 				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
 			
-			//Declaração da Função
+			//Assinatura  da Função
 			| TIPO TK_ID '('F_PARAMS')'';'
 			{	
+			    /*
+			    @TODO Adicionar a função a um vetor de funções ou a um mapa (???) 
 				string temp_funcao = getID();
 				tab_funcoes[$2.variavel] = temp_funcao; 
 				
-				$$.traducao = "\t" + $1.tipo + " " + temp_funcao + '(';
+				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
 				
 				
-			    $$.traducao += parametros[0].tipo + " " + parametros[0].variavel;
+			    funcoes += parametros[0].tipo + " " + parametros[0].nome;
 			    for(int i = 1; i < parametros.size(); i++)
-			    	$$.traducao += ", " + parametros[i].tipo + " " + parametros[i].variavel;
+			    	funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
 			    	
-				$$.traducao += ");\n";
+				funcoes += ");\n";
 				parametros.clear();
+				*/
 				
 			}
 			//Chamada da Função
 			|TK_ID '=' TK_ID '('F_PARAMS')'';'
 			{
-			    $$.traducao = $5.traducao;
-			    $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
+			    if(buscaFuncao($3.variavel) != "NULL") //Se a função já foi declarada
+			    {
+			        $$.traducao = $5.traducao;
+			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
 			    
 			    
-			    $$.traducao += parametros[0].variavel;
-			    for(int i = 1; i < parametros.size(); i++)
-			    	$$.traducao += ", " + parametros[i].variavel;
+			        $$.traducao += parametros[0].nome;
+			        for(int i = 1; i < parametros.size(); i++)
+			    	    $$.traducao += ", " + parametros[i].nome;
 			    	
-				$$.traducao += ");\n";
+				    $$.traducao += ");\n";
+				    parametros.clear();
+				    desempilha_mapa();
+			    }
+			    
+			}
+			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' COMANDO
+			{
+	            string temp_funcao = getID();
+				tab_funcoes[$2.variavel] = temp_funcao; 
+				
+				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
+				
+				
+			    funcoes += parametros[0].tipo + " " + parametros[0].nome;
+			    for(int i = 1; i < parametros.size(); i++)
+			    	funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
+			    	
+				funcoes += ")\n{\n\t";
+				funcoes += $7.traducao + "\n\t";
 				parametros.clear();
+				desempilha_mapa();
 			}
             ;
-
+    
 
                        
 F_PARAMS    : F_PARAMS ',' E
@@ -347,8 +373,8 @@ F_PARAMS    : F_PARAMS ',' E
              	$$.variavel = $3.variavel;
 				$$.tipo = $3.tipo;
 				
-				
-				parametros.push_back($3);//Adicionando a lista de parâmetros da função
+			    (*pilhaDeMapas.front())[$3.variavel] = {getID(), $3.tipo};      
+				parametros.push_back(buscaNoMapa($3.variavel));//Adicionando a lista de parâmetros da função
              }
              
              | E
@@ -357,30 +383,26 @@ F_PARAMS    : F_PARAMS ',' E
              	$$.variavel = $1.variavel;
 				$$.tipo = $1.tipo;
 				
-				
-				parametros.push_back($1);
+				(*pilhaDeMapas.front())[$1.variavel] = {getID(), $1.tipo};      
+				parametros.push_back(buscaNoMapa($1.variavel));
              }
           	
           	| F_PARAMS ',' TIPO TK_ID
           	{
           		
-          		$$.traducao = $1.traducao + $4.traducao;
-             	$$.variavel = getID();
-				$$.tipo = $4.tipo;
+          		(*pilhaDeMapas.front())[$4.variavel] = {getID(), $4.tipo};      
+                $$.traducao = "";
 				
-				parametros.push_back($$);
+				parametros.push_back(buscaNoMapa($4.variavel));
           	}
           	
           	| TIPO TK_ID
           	{
           	
-				
-          		$$.traducao = $1.traducao;
-             	$$.variavel = getID();
-				$$.tipo = $1.tipo;
-				
-				
-				parametros.push_back($$);	
+				(*pilhaDeMapas.front())[$1.variavel] = {getID(), $1.tipo};      
+                $$.traducao = "";
+                
+				parametros.push_back(buscaNoMapa($1.variavel));	
           	}
           	
             ;
@@ -796,6 +818,20 @@ struct variavel buscaNoMapa(string var)
 	
 	cout << "Variável \"" << var << "\" não declarada nesse escopo" << endl;
 	exit(0);
+}
+
+string buscaFuncao(string nome_funcao)
+{
+	
+	cout << "Entrei aqui" << endl;
+	
+	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end()) 
+	{
+        cout << "ERRO: Função " + nome_funcao + " não declarada anteriormente."	<< endl;
+        return "NULL";
+	}
+	else
+        return tab_funcoes.find(nome_funcao)->second;
 }
 
 void desempilha_labels()
