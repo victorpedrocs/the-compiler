@@ -11,3 +11,4 @@
 * funcao
 * entrada do teclado
 * vetores
+* redeclaração de variáveis
