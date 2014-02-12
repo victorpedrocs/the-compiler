@@ -6,9 +6,10 @@
 * comentários
 * escopo for OK
 * for vazio OK
+* if/else shift reduce = OK
 * incremento/decremento
 * return = OK
 * funcao
-* entrada do teclado
+* entrada do teclado = OK
 * vetores
 * redeclaração de variáveis

@@ -5,5 +5,5 @@ all:
 		g++ -o glf y.tab.c -lfl -std=c++0x
 
 		./glf < exemplo.cl > saida.cpp
-		gcc saida.cpp
+		g++ saida.cpp
 		./a.out

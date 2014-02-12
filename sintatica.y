@@ -58,7 +58,7 @@ list<string> pilhaDeLabelsFim;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_RETURN 
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN 
 %token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE
 %token TK_FIM TK_ERROR
 
@@ -68,7 +68,10 @@ list<string> pilhaDeLabelsFim;
 %left TK_SOMA_SUB TK_OP_REL 
 %left TK_MULT_DIV
 %left TK_OP_LOG
-%left TK_ELSE TK_NEG
+%left TK_NEG
+%nonassoc IFX
+%nonassoc TK_ELSE
+
 
 %%
 
@@ -181,17 +184,20 @@ ATRIBUICAO	: TK_ID '=' E
 				}	
 			}
 			;
-			
+			/*
 ELSE		: TK_ELSE COMANDO
 			{
 				$$.traducao = $2.traducao;
 			}
 			
+			/*
 			|
 			{
 				$$.traducao = "";
 			}
+			
 			;
+			*/
 			
 COMANDO 	: E ';'
 
@@ -199,25 +205,33 @@ COMANDO 	: E ';'
             
             | ATRIBUICAO ';'
 
-			| DECLARACAO ';'
-
-            | TK_PRINT '(' TK_ID ')' ';'
-            {
-                $$.traducao = "\tcout << " + buscaNoMapa($3.variavel).nome + " << endl;\n";
-            }
-            
-            | TK_RETURN E ';'
-            {
-                $$.traducao = "\treturn " + $2.variavel + ";\n";
-            }
+			| DECLARACAO ';'      
             
 			| ';'
 			{
 				$$.traducao = "";
 			}
 			
+			/* impressão */
+            | TK_PRINT '(' E ')' ';'
+            {
+                $$.traducao = $3.traducao + "\tcout << " + $3.variavel + " << endl;\n";
+            }
+            
+            | TK_RETURN E ';'
+            {
+                $$.traducao = $2.traducao + "\treturn " + $2.variavel + ";\n";
+            }
+            
+            /* entrada de usuário */
+            
+            | TK_SCAN '(' TK_ID ')' ';'
+            {
+            	$$.traducao = $3.traducao + "\tcin >> " + buscaNoMapa($3.variavel).nome + ";\n";
+            }
+			
 			/* if */
-			| TK_IF '(' E ')' COMANDO ELSE
+			| TK_IF '(' E ')' COMANDO %prec IFX
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
@@ -226,10 +240,20 @@ COMANDO 	: E ';'
 				
 				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao ;
 				
-				if ($6.traducao != "")
-					$$.traducao += "\tgoto " + label_fim_else + ";\n\n\t" + label_fim_if + ":\n" + $6.traducao + "\n\t" +label_fim_else + ":\n";
-				else
-					$$.traducao += "\n\t" + label_fim_if + ":\n";
+				$$.traducao += "\n\t" + label_fim_if + ":\n";
+			}
+
+			/* if else */
+			| TK_IF '(' E ')' COMANDO TK_ELSE COMANDO
+			{
+				string negacao_condicao = getID();
+				string label_fim_if = geraLabel();
+				string label_fim_else = geraLabel();
+				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo}; // criando e adicionando a variável que vai guardar a negacao da condicao
+				
+				$$.traducao = $3.traducao + "\t" +  negacao_condicao + " = !(" + $3.variavel + ");\n\tif(" + negacao_condicao + ") goto " + label_fim_if + ";\n" + $5.traducao ;
+				
+				$$.traducao += "\tgoto " + label_fim_else + ";\n\n\t" + label_fim_if + ":\n" + $7.traducao + "\n\t" +label_fim_else + ":\n";
 
 			}
 			
@@ -307,10 +331,19 @@ COMANDO 	: E ';'
 				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
 			
+		
+			/*
+			
+			Raíza, seu código está dando um shift/reduce ;)
+			Consegui retirar o shift/reduce do if-else \o/
+			
+			*/
+				
 			//Assinatura  da Função
 			| TIPO TK_ID '('F_PARAMS')'';'
 			{	
 			    /*
+			    //abre_coment
 			    @TODO Adicionar a função a um vetor de funções ou a um mapa (???) 
 				string temp_funcao = getID();
 				tab_funcoes[$2.variavel] = temp_funcao; 
@@ -324,11 +357,12 @@ COMANDO 	: E ';'
 			    	
 				funcoes += ");\n";
 				parametros.clear();
-				*/
 				
+				//fecha_coment
+				*/
 			}
 			//Chamada da Função
-			|TK_ID '=' TK_ID '('F_PARAMS')'';'
+			| TK_ID '=' TK_ID '('F_PARAMS')'';'
 			{
 			    if(buscaFuncao($3.variavel) != "NULL") //Se a função já foi declarada
 			    {
@@ -336,13 +370,30 @@ COMANDO 	: E ';'
 			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
 			    
 			    
-			        $$.traducao += parametros[0].nome;
+			        //abre_coment
+			        /*
+			        
+			        
+			        // se a função não receber nenhum parâmetro? Ex.: imprime();
+			        
+			        
+			        $$.traducao += parametros[0].nome;			
 			        for(int i = 1; i < parametros.size(); i++)
 			    	    $$.traducao += ", " + parametros[i].nome;
 			    	
 				    $$.traducao += ");\n";
+				    
+				    
+				   	//fecha_coment
+				    */
+				    
+				    for(int i = 0; i < parametros.size(); i++)
+			    	    $$.traducao += ", " + parametros[i].nome;
+			    	
+				    $$.traducao += ");\n";
+				    
 				    parametros.clear();
-				    desempilha_mapa();
+				    //desempilha_mapa();							// está desempilhando o quê? Não foi aberto nenhum escopo!
 			    }
 			    
 			}
@@ -403,8 +454,7 @@ F_PARAMS    : F_PARAMS ',' E
                 $$.traducao = "";
                 
 				parametros.push_back(buscaNoMapa($1.variavel));	
-          	}
-          	
+          	}	
             ;
             
  
@@ -415,6 +465,7 @@ FOR_PARAM	: DECLARACAO
 			| E
 
 			;
+			
 			
 ABRE_LACO	: 
 			{
@@ -624,9 +675,6 @@ VALOR		: TK_NUM
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			;
-
-//OPERADOR	: TK_OP_REL | TK_OP_LOG;
-
 
 %%
 

@@ -62,7 +62,8 @@ STRING "\""({LETRA}|{NUM}|{CARACTER_ESP}|{ESPACO})*"\""
 "||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
 "!"		{ yylval.traducao = yytext; return TK_NEG; }
 
-"print"    { return TK_PRINT; }
+"print"	{ return TK_PRINT; }
+"scan"	{ return TK_SCAN; }
 
 {NUM}		{ yylval.traducao = yytext; yylval.tipo = "int"; return TK_NUM; }
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
