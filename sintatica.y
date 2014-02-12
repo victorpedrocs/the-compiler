@@ -38,6 +38,7 @@ string buscaFuncao(string nome_funcao);
 string geraLabel();
 void desempilha_labels();
 void desempilha_mapa();
+void verifica_redeclaracao(string var);
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -126,12 +127,14 @@ DECLARACOES	: DECLARACOES DECLARACAO
 
 DECLARACAO	: TIPO TK_ID
             {
+            	verifica_redeclaracao($2.variavel);
                 (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};      
                 $$.traducao = "";
             }
             
             | TIPO TK_ID '=' E
             {
+            	verifica_redeclaracao($2.variavel);
 				(*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
                 
                 if($1.tipo != $4.tipo) // então precisa fazer casting
@@ -334,8 +337,8 @@ COMANDO 	: E ';'
 		
 			/*
 			
-			Raíza, seu código está dando um shift/reduce ;)
-			Consegui retirar o shift/reduce do if-else \o/
+			Raíza, seu código está dando um shift/reduce.
+			Consegui retirar o shift/reduce do if-else.
 			
 			*/
 				
@@ -344,6 +347,7 @@ COMANDO 	: E ';'
 			{	
 			    /*
 			    //abre_coment
+			    
 			    @TODO Adicionar a função a um vetor de funções ou a um mapa (???) 
 				string temp_funcao = getID();
 				tab_funcoes[$2.variavel] = temp_funcao; 
@@ -369,23 +373,21 @@ COMANDO 	: E ';'
 			        $$.traducao = $5.traducao;
 			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
 			    
-			    
-			        //abre_coment
-			        /*
-			        
-			        
+			 			        
+			 			        
+			 			        
 			        // se a função não receber nenhum parâmetro? Ex.: imprime();
 			        
-			        
+			        /*
 			        $$.traducao += parametros[0].nome;			
 			        for(int i = 1; i < parametros.size(); i++)
 			    	    $$.traducao += ", " + parametros[i].nome;
 			    	
 				    $$.traducao += ");\n";
-				    
-				    
-				   	//fecha_coment
 				    */
+				    
+				    
+				    
 				    
 				    for(int i = 0; i < parametros.size(); i++)
 			    	    $$.traducao += ", " + parametros[i].nome;
@@ -732,7 +734,7 @@ string getTipo(string var1, string op, string var2)
 			return tipo_retorno;
 	}
 	
-	cout << "Erro: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
+	cerr << "Erro: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -864,8 +866,8 @@ struct variavel buscaNoMapa(string var)
 		if((res = (*iterator)->find(var)) != (*iterator)->end())
 			return res->second;
 	
-	cout << "Variável \"" << var << "\" não declarada nesse escopo" << endl;
-	exit(0);
+	cerr << "Variável \"" << var << "\" não declarada nesse escopo" << endl;
+	exit(1);
 }
 
 string buscaFuncao(string nome_funcao)
@@ -875,7 +877,7 @@ string buscaFuncao(string nome_funcao)
 	
 	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end()) 
 	{
-        cout << "ERRO: Função " + nome_funcao + " não declarada anteriormente."	<< endl;
+        cerr << "ERRO: Função " + nome_funcao + " não declarada anteriormente."	<< endl;
         return "NULL";
 	}
 	else
@@ -894,7 +896,18 @@ void desempilha_mapa()
 	pilhaDeMapas.pop_front();
 }
 
-
+void verifica_redeclaracao(string var)
+{
+	list<mapa*>::iterator iterator;
+	mapa_it res;
+	
+	for(iterator = pilhaDeMapas.begin(); iterator != pilhaDeMapas.end(); iterator++)
+		if((res = (*iterator)->find(var)) != (*iterator)->end())
+		{
+			cerr << "Redeclaração de variável: " << var << " já declarada anteriormente" << endl;
+			exit(1);
+		}
+}
 /*
 
 http://www.quut.com/c/ANSI-C-grammar-y.html
