@@ -2,14 +2,20 @@
 	Compilador C'
  */
  
-// Comentário 2
+
 
 int main()
 {
-	int i = 2;
+   int soma(int a, int b){
+    }
+    
+    int a;
+    //int d;
+    //int c;
+    a = soma(1,2);
 	
-	print("Sou um compilador legal!");
 	
 	return 0;
 }
 
+ 

@@ -60,7 +60,7 @@ list<string> pilhaDeLabelsFim;
 %}
 
 %token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN 
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE TK_NOME_FUNCAO
 %token TK_FIM TK_ERROR
 
 %start S
@@ -79,7 +79,7 @@ list<string> pilhaDeLabelsFim;
 S			: ABRE_ESCOPO DECLARACOES MAIN
 			{
 				desempilha_mapa();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n\n" << "int main(void)\n{\n" << declaracoes << funcoes <<"\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n" << funcoes << "\nint main(void)\n{\n" << declaracoes  <<"\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
 			}
 			;
 
@@ -335,68 +335,37 @@ COMANDO 	: E ';'
 			}
 			
 		
+	
 			/*
-			
-			Raíza, seu código está dando um shift/reduce.
-			Consegui retirar o shift/reduce do if-else.
-			
-			*/
-				
-			//Assinatura  da Função
+			Assinatura  da Função 
 			| TIPO TK_ID '('F_PARAMS')'';'
 			{	
-			    /*
-			    //abre_coment
-			    
-			    @TODO Adicionar a função a um vetor de funções ou a um mapa (???) 
-				string temp_funcao = getID();
-				tab_funcoes[$2.variavel] = temp_funcao; 
+			    $$.traducao = ""; 
 				
-				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
-				
-				
-			    funcoes += parametros[0].tipo + " " + parametros[0].nome;
-			    for(int i = 1; i < parametros.size(); i++)
-			    	funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
-			    	
-				funcoes += ");\n";
-				parametros.clear();
-				
-				//fecha_coment
-				*/
 			}
+			*/
+			
 			//Chamada da Função
 			| TK_ID '=' TK_ID '('F_PARAMS')'';'
-			{
-			    if(buscaFuncao($3.variavel) != "NULL") //Se a função já foi declarada
-			    {
+			{   
+			   
+			   if(buscaFuncao($3.variavel) != "NULL") //Se a função já foi declarada
+			   {
+			       
 			        $$.traducao = $5.traducao;
-			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaNoMapa($3.variavel).nome + "(";
+			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaFuncao($3.variavel) + "(";
 			    
-			 			        
-			 			        
-			 			        
-			        // se a função não receber nenhum parâmetro? Ex.: imprime();
+			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
+			 		{
+			 		    $$.traducao += parametros[0].nome;			
+			            for(int i = 1; i < parametros.size(); i++)
+			    	        $$.traducao += ", " + parametros[i].nome;	//Montando assim pra não deixar vírgulas no final        
+			 		}
 			        
-			        /*
-			        $$.traducao += parametros[0].nome;			
-			        for(int i = 1; i < parametros.size(); i++)
-			    	    $$.traducao += ", " + parametros[i].nome;
-			    	
-				    $$.traducao += ");\n";
-				    */
-				    
-				    
-				    
-				    
-				    for(int i = 0; i < parametros.size(); i++)
-			    	    $$.traducao += ", " + parametros[i].nome;
-			    	
-				    $$.traducao += ");\n";
-				    
+			    	$$.traducao += ");\n";
 				    parametros.clear();
-				    //desempilha_mapa();							// está desempilhando o quê? Não foi aberto nenhum escopo!
 			    }
+			    
 			    
 			}
 			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' COMANDO
@@ -404,17 +373,21 @@ COMANDO 	: E ';'
 	            string temp_funcao = getID();
 				tab_funcoes[$2.variavel] = temp_funcao; 
 				
+			
 				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
 				
+				if(parametros.size() > 0)
+				{
+			        funcoes += parametros[0].tipo + " " + parametros[0].nome;
+			        for(int i = 1; i < parametros.size(); i++)
+			    	    funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
+				}	
 				
-			    funcoes += parametros[0].tipo + " " + parametros[0].nome;
-			    for(int i = 1; i < parametros.size(); i++)
-			    	funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
-			    	
-				funcoes += ")\n{\n\t";
-				funcoes += $7.traducao + "\n\t";
+				funcoes += "){\n\t";
+				funcoes += $7.traducao + "}\n\t";
+				
 				parametros.clear();
-				desempilha_mapa();
+				
 			}
             ;
     
@@ -425,8 +398,7 @@ F_PARAMS    : F_PARAMS ',' E
              	$$.traducao = $1.traducao + $3.traducao;
              	$$.variavel = $3.variavel;
 				$$.tipo = $3.tipo;
-				
-			    (*pilhaDeMapas.front())[$3.variavel] = {getID(), $3.tipo};      
+			
 				parametros.push_back(buscaNoMapa($3.variavel));//Adicionando a lista de parâmetros da função
              }
              
@@ -435,28 +407,27 @@ F_PARAMS    : F_PARAMS ',' E
              	$$.traducao = $1.traducao;
              	$$.variavel = $1.variavel;
 				$$.tipo = $1.tipo;
-				
-				(*pilhaDeMapas.front())[$1.variavel] = {getID(), $1.tipo};      
+				  
 				parametros.push_back(buscaNoMapa($1.variavel));
              }
           	
           	| F_PARAMS ',' TIPO TK_ID
           	{
-          		
-          		(*pilhaDeMapas.front())[$4.variavel] = {getID(), $4.tipo};      
-                $$.traducao = "";
-				
+          	    $$.traducao = "";
 				parametros.push_back(buscaNoMapa($4.variavel));
           	}
           	
           	| TIPO TK_ID
           	{
-          	
-				(*pilhaDeMapas.front())[$1.variavel] = {getID(), $1.tipo};      
+      	
                 $$.traducao = "";
-                
 				parametros.push_back(buscaNoMapa($1.variavel));	
-          	}	
+          	}
+          	
+          	|
+          	{
+          	    $$.traducao = "";
+          	}
             ;
             
  
@@ -734,7 +705,7 @@ string getTipo(string var1, string op, string var2)
 			return tipo_retorno;
 	}
 	
-	cerr << "Erro: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
+	cerr << "ERRO: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
 	exit(EXIT_FAILURE);
 }
 
@@ -866,18 +837,15 @@ struct variavel buscaNoMapa(string var)
 		if((res = (*iterator)->find(var)) != (*iterator)->end())
 			return res->second;
 	
-	cerr << "Variável \"" << var << "\" não declarada nesse escopo" << endl;
+	cerr << "ERRO: Variável \"" << var << "\" não declarada nesse escopo" << endl;
 	exit(1);
 }
 
 string buscaFuncao(string nome_funcao)
 {
-	
-	cout << "Entrei aqui" << endl;
-	
 	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end()) 
 	{
-        cerr << "ERRO: Função " + nome_funcao + " não declarada anteriormente."	<< endl;
+        cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada anteriormente."	<< endl;
         return "NULL";
 	}
 	else
