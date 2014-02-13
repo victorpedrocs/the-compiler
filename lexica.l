@@ -39,6 +39,7 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 "while"		{return TK_WHILE;}
 "do"		{return TK_DO;}
 "for"		{return TK_FOR;}
+"void"		{yylval.tipo = yytext; return TK_TIPO_VOID;}
 "int"		{yylval.tipo = yytext; return TK_TIPO_INT;}
 "float"		{yylval.tipo = yytext; return TK_TIPO_REAL;}
 "char"		{yylval.tipo = yytext; return TK_TIPO_CHAR;}

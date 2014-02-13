@@ -11,8 +11,8 @@
 
 using namespace std;
 
-typedef map<string, struct variavel>::iterator mapa_it;
-typedef map<string, struct variavel> mapa;
+typedef map<string, struct info>::iterator mapa_it;
+typedef map<string, struct info> mapa;
 
 struct atributos
 {
@@ -20,10 +20,17 @@ struct atributos
 	int tamanho;
 };
 
-struct variavel
+struct info
 {
     string nome, tipo;
     int tamanho;
+};
+
+struct info_funcao
+{
+    string nome, tipo;
+    int quantidade;
+    vector<struct info> parametros;
 };
 
 int yylex(void);
@@ -33,22 +40,24 @@ string getTipo(string, string, string);
 string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
 void getDeclaracoes(mapa* mapa_variaveis);
-struct variavel buscaNoMapa(string var);
-string buscaFuncao(string nome_funcao);
+struct info busca_no_mapa(string var);
+struct info_funcao busca_funcao(string nome_funcao);
 string geraLabel();
 void desempilha_labels();
 void desempilha_mapa();
 void verifica_redeclaracao(string var);
+void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros);
+void verifica_retorno_funcao(string var_retorno, string tipo);
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
-map<string, string> tab_funcoes;
+map<string, struct info_funcao> tab_funcoes;
 
 string declaracoes, string_cases, funcoes;
 
 
 vector<YYSTYPE> temporarias;
-vector<struct variavel> parametros;
+vector<struct info> parametros;
 vector<string> string_case;
 
 list<mapa*> pilhaDeMapas;
@@ -60,7 +69,7 @@ list<string> pilhaDeLabelsFim;
 %}
 
 %token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN 
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE TK_NOME_FUNCAO
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE TK_NOME_FUNCAO
 %token TK_FIM TK_ERROR
 
 %start S
@@ -129,7 +138,6 @@ DECLARACAO	: TIPO TK_ID
             {
             	verifica_redeclaracao($2.variavel);
                 (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};   
-                $$.variavel = $2.variavel; //Pra Função
                 $$.traducao = "";
             }
             
@@ -145,23 +153,25 @@ DECLARACAO	: TIPO TK_ID
                 	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
                 	$$.traducao = $4.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $4.variavel + ";\n";
-                	$$.traducao += "\t" + buscaNoMapa($2.variavel).nome + " = " + temp_cast + ";\n";
+                	$$.traducao += "\t" + busca_no_mapa($2.variavel).nome + " = " + temp_cast + ";\n";
                 }
                 
                 else
                 {
 		            if($2.tipo == "string")
 		            {
-			            $$.traducao = $4.traducao + "\tstrcpy(" + buscaNoMapa($2.variavel).nome + ", " + $4.variavel + ");\n";
+			            $$.traducao = $4.traducao + "\tstrcpy(" + busca_no_mapa($2.variavel).nome + ", " + $4.variavel + ");\n";
 			            (*pilhaDeMapas.front())[$2.variavel].tamanho = $4.tamanho;
 					}
 			        else
-			      		$$.traducao = $4.traducao + "\t" + buscaNoMapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+			      		$$.traducao = $4.traducao + "\t" + busca_no_mapa($2.variavel).nome + " = " + $4.variavel + ";\n";
 			        
 		        }
 
             }
-            
+            /*
+            | TIPO TK_ID '('F_PARAMS')' ';'
+			*/
             ;
             
 ATRIBUICAO	: TK_ID '=' E
@@ -173,19 +183,19 @@ ATRIBUICAO	: TK_ID '=' E
                 	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
                 	$$.traducao = $3.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-                	$$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + temp_cast + ";\n";
+                	$$.traducao += "\t" + busca_no_mapa($1.variavel).nome + " = " + temp_cast + ";\n";
                 }
                 
                 else
                 {
 					if($$.tipo == "string")
 					{
-						$$.traducao = $3.traducao + "\tstrcpy(" + buscaNoMapa($1.variavel).nome + ", " + $3.variavel + ");\n";
+						$$.traducao = $3.traducao + "\tstrcpy(" + busca_no_mapa($1.variavel).nome + ", " + $3.variavel + ");\n";
 						(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
 					}
 				
 					else
-						$$.traducao = $3.traducao + "\t" + buscaNoMapa($1.variavel).nome + " = " + $3.variavel + ";\n";
+						$$.traducao = $3.traducao + "\t" + busca_no_mapa($1.variavel).nome + " = " + $3.variavel + ";\n";
 				}	
 			}
 			;
@@ -232,7 +242,7 @@ COMANDO 	: E ';'
             
             | TK_SCAN '(' TK_ID ')' ';'
             {
-            	$$.traducao = $3.traducao + "\tcin >> " + buscaNoMapa($3.variavel).nome + ";\n";
+            	$$.traducao = $3.traducao + "\tcin >> " + busca_no_mapa($3.variavel).nome + ";\n";
             }
 			
 			/* if */
@@ -338,45 +348,20 @@ COMANDO 	: E ';'
 			
 		
 	
-			/*
-			Assinatura  da Função 
-			| TIPO TK_ID '('F_PARAMS')'';'
+			/*Assinatura  da Função 
+			| TIPO E ';'
 			{	
 			    $$.traducao = ""; 
 				
-			}
-			*/
+			}*/
 			
-			//Chamada da Função
-			| TK_ID '=' TK_ID '('F_PARAMS')'';'
-			{   
-			   
-			   if(buscaFuncao($3.variavel) != "NULL") //Se a função já foi declarada
-			   {
-			       
-			        $$.traducao = $5.traducao;
-			        $$.traducao += "\t" + buscaNoMapa($1.variavel).nome + " = " + buscaFuncao($3.variavel) + "(";
-			    
-			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
-			 		{
-			 		    $$.traducao += parametros[0].nome;			
-			            for(int i = 1; i < parametros.size(); i++)
-			    	        $$.traducao += ", " + parametros[i].nome;	//Montando assim pra não deixar vírgulas no final        
-			 		}
-			        
-			    	$$.traducao += ");\n";
-				    parametros.clear();
-			    }
-			    
-			    
-			}
-			| DECLARACAO ABRE_ESCOPO '(' F_PARAMS ')' COMANDO
+			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 			{
 	            string temp_funcao = getID();
-				tab_funcoes[$1.variavel] = temp_funcao; 
+				tab_funcoes[$2.variavel] = {temp_funcao, $1.tipo, parametros.size(), parametros}; 
 				
 			
-				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
+				funcoes += "\n" + $1.tipo + " " + temp_funcao + '(';
 				
 				if(parametros.size() > 0)
 				{
@@ -385,45 +370,53 @@ COMANDO 	: E ';'
 			    	    funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
 				}	
 				
-				funcoes += "){\n\t";
-				funcoes += $6.traducao + "}\n\t";
+				funcoes += ")\n{\n" + $7.traducao + "}\n";
 				
 				parametros.clear();
+				pilhaDeMapas.pop_front();
 				
 			}
             ;
-    
-
+   
                        
 F_PARAMS    : F_PARAMS ',' E
              {
              	$$.traducao = $1.traducao + $3.traducao;
              	$$.variavel = $3.variavel;
 				$$.tipo = $3.tipo;
-			
-				parametros.push_back(buscaNoMapa($3.variavel));//Adicionando a lista de parâmetros da função
+				
+				if($3.traducao != "") //É uma expressão ou valor
+					parametros.push_back(busca_no_mapa($3.variavel));//Adicionando a lista de parâmetros da função
+				else //É a derivação de um TK_ID
+					parametros.push_back({$3.variavel, $3.tipo});
+				
+					
              }
              
              | E
-             {
+             {				
              	$$.traducao = $1.traducao;
              	$$.variavel = $1.variavel;
 				$$.tipo = $1.tipo;
-				  
-				parametros.push_back(buscaNoMapa($1.variavel));
+				
+				if($1.traducao != "") 
+					parametros.push_back(busca_no_mapa($1.variavel));
+				else 
+					parametros.push_back({$1.variavel, $1.tipo});
+				//parametros.push_back(busca_no_mapa($1.variavel));
+
              }
           	
-          	| F_PARAMS ',' TIPO TK_ID
+          	| F_PARAMS ',' DECLARACAO
           	{
           	    $$.traducao = "";
-				parametros.push_back({getID(), $4.tipo});
+				parametros.push_back({$3.variavel, $3.tipo});
           	}
           	
-          	| TIPO TK_ID
+          	| DECLARACAO
           	{
-      	
                 $$.traducao = "";
-				parametros.push_back({getID(), $2.tipo});	
+				parametros.push_back({$1.variavel, $1.tipo});
           	}
           	
           	|
@@ -611,7 +604,7 @@ E 			: '('E')'
 			{
 				string var_temp = getID();
 				string var_soma = getID();
-				string var_incremento = buscaNoMapa($1.variavel).nome;
+				string var_incremento = busca_no_mapa($1.variavel).nome;
 				char tipo_op = $2.traducao[0];
 				(*pilhaDeMapas.front())[var_temp] = {var_temp, "int"};
 				(*pilhaDeMapas.front())[var_soma] = {var_soma, "int"};
@@ -622,14 +615,34 @@ E 			: '('E')'
 			| TK_ID
 			{
 				$$.traducao = "";
-				struct variavel var = buscaNoMapa($1.variavel);
+				struct info var = busca_no_mapa($1.variavel);
 				$$.variavel = var.nome;
 				$$.tipo = var.tipo;
 				$$.tamanho = var.tamanho;
 			}
+			
+			| TK_ID '('F_PARAMS')'
+			{   
+					verifica_parametros_funcao($1.variavel, parametros);
+			       
+			       	$$.tipo = busca_funcao($1.variavel).tipo;
+			        $$.traducao = $3.traducao;
+			        $$.traducao += "\t" + busca_funcao($1.variavel).nome + "(";
+			    
+			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
+			 		{
+			 		    $$.traducao += parametros[0].nome;			
+			            for(int i = 1; i < parametros.size(); i++)
+			    	        $$.traducao += ", " + parametros[i].nome;	//Montando assim pra não deixar vírgulas no final        
+			 		}
+			        
+			    	$$.traducao += ");\n";
+				    parametros.clear();
+			
+			} 
 			;
 			
-TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL;
+TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL | TK_TIPO_VOID;
 
 VALOR		: TK_NUM 
 			{
@@ -830,7 +843,7 @@ void getDeclaracoes(mapa* mapa_variaveis)
 }
 
 
-struct variavel buscaNoMapa(string var)
+struct info busca_no_mapa(string var)
 {
 	list<mapa*>::iterator iterator;
 	mapa_it res;
@@ -843,15 +856,47 @@ struct variavel buscaNoMapa(string var)
 	exit(1);
 }
 
-string buscaFuncao(string nome_funcao)
+struct info_funcao busca_funcao(string nome_funcao)
 {
-	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end()) 
+	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end())         
 	{
         cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada anteriormente."	<< endl;
-        return "NULL";
+		exit(1);
+	} 
+	else return tab_funcoes.find(nome_funcao)->second;
+}
+
+
+void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros)
+{
+	struct info_funcao funcao = tab_funcoes[nome_funcao];
+	
+	busca_funcao(nome_funcao);	
+	
+	if(parametros.size() != funcao.parametros.size())
+	{
+		cerr << "ERRO: Quantidade de parâmetros diferente do esperado." << endl;
+		exit(1);
 	}
-	else
-        return tab_funcoes.find(nome_funcao)->second;
+			   
+	
+			   
+	for(int i = 0; i < parametros.size(); i++)			   			
+	    if (funcao.parametros[0].tipo != parametros[i].tipo)
+	    {
+	    	cerr << "ERRO: Parâmetros com tipos diferentes." << endl;
+			exit(1);
+	    }
+			   
+}
+
+void verifica_retorno_funcao(string var_retorno, string tipo)
+{
+	if(busca_no_mapa(var_retorno).tipo != tipo)
+	{
+		cerr << "ERRO: Tipos diferentes." << endl;
+		exit(1);
+	}
 }
 
 void desempilha_labels()

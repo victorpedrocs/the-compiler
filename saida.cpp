@@ -4,21 +4,26 @@
 
 using namespace std;
 
-	int $temp3(int $temp1, int $temp2){
-	}
-	
+int $temp2(int soma, int r)
+{
+}
+
+void $temp4()
+{
+	strcpy($temp3, "Alo");
+	cout << $temp3 << endl;
+}
+
 int main(void)
 {
+	char $temp3[3];
+	int $temp8;
 	int $temp5;
-	int $temp6;
 	int $temp7;
-	int $temp4;
-	int $temp0;
+	int $temp6;
 	//-------------
-	$temp5 = 1;
-	$temp6 = 2;
-	$temp4 = $temp3($temp5, $temp6);
-	$temp7 = 0;
-	return $temp7;
+	$temp4();
+	$temp8 = 0;
+	return $temp8;
 
 }
