@@ -128,7 +128,8 @@ DECLARACOES	: DECLARACOES DECLARACAO
 DECLARACAO	: TIPO TK_ID
             {
             	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};      
+                (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};   
+                $$.variavel = $2.variavel; //Pra Função
                 $$.traducao = "";
             }
             
@@ -136,6 +137,7 @@ DECLARACAO	: TIPO TK_ID
             {
             	verifica_redeclaracao($2.variavel);
 				(*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
+                $$.variavel = $2.variavel;//Pra Função
                 
                 if($1.tipo != $4.tipo) // então precisa fazer casting
                 {
@@ -368,10 +370,10 @@ COMANDO 	: E ';'
 			    
 			    
 			}
-			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' COMANDO
+			| DECLARACAO ABRE_ESCOPO '(' F_PARAMS ')' COMANDO
 			{
 	            string temp_funcao = getID();
-				tab_funcoes[$2.variavel] = temp_funcao; 
+				tab_funcoes[$1.variavel] = temp_funcao; 
 				
 			
 				funcoes += "\n\t" + $1.tipo + " " + temp_funcao + '(';
@@ -384,7 +386,7 @@ COMANDO 	: E ';'
 				}	
 				
 				funcoes += "){\n\t";
-				funcoes += $7.traducao + "}\n\t";
+				funcoes += $6.traducao + "}\n\t";
 				
 				parametros.clear();
 				
@@ -414,14 +416,14 @@ F_PARAMS    : F_PARAMS ',' E
           	| F_PARAMS ',' TIPO TK_ID
           	{
           	    $$.traducao = "";
-				parametros.push_back(buscaNoMapa($4.variavel));
+				parametros.push_back({getID(), $4.tipo});
           	}
           	
           	| TIPO TK_ID
           	{
       	
                 $$.traducao = "";
-				parametros.push_back(buscaNoMapa($1.variavel));	
+				parametros.push_back({getID(), $2.tipo});	
           	}
           	
           	|

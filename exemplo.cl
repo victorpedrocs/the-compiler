@@ -6,7 +6,7 @@
 
 int main()
 {
-   int soma(int a, int b){
+   int soma(int r, int b){
     }
     
     int a;
