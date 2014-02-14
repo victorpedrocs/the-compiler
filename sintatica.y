@@ -68,8 +68,8 @@ list<string> pilhaDeLabelsFim;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN 
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE TK_NOME_FUNCAO
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN TK_OP_IGUALDADE
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE 
 %token TK_FIM TK_ERROR
 
 %start S
@@ -216,9 +216,9 @@ ELSE		: TK_ELSE COMANDO
 			
 COMANDO 	: E ';'
 
-            | OPERACAO
-
 			| BLOCO
+			
+			| OPERACAO
             
             | ATRIBUICAO ';'
 
@@ -355,8 +355,8 @@ COMANDO 	: E ';'
 			{	
 			    $$.traducao = ""; 
 				
-			}*/
-			
+			}
+			*/
 			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 			{
 	            string temp_funcao = getID();
@@ -377,7 +377,7 @@ COMANDO 	: E ';'
 				parametros.clear();
 				pilhaDeMapas.pop_front();
 				
-			}
+			} 
             ;
    
                        
@@ -527,37 +527,6 @@ E 			: '('E')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
-			/*
-			| E TK_OP_LOG E
-			{	
-				$$.variavel = getID();
-				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
-				
-				if($1.tipo != $3.tipo) // então precisa casting
-				{
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
-					
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-						$1.tipo = tipo_retorno;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-						$3.tipo = tipo_retorno;
-					}
-				}
-				
-				$$.tipo = tipo_retorno;
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
-			}
-			*/
 			| TK_NEG E
 			{
 				$$.variavel = getID();
@@ -576,34 +545,6 @@ E 			: '('E')'
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
 			}
 
-            /*
-			| E TK_OP_REL E
-			{	
-				$$.variavel = getID();			
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
-				
-				if($1.tipo != $3.tipo) // então precisa casting
-				{
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-					string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
-                	
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-					}
-				}
-				
-				$$.tipo = "unsigned short int";
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
-			}
-			*/
 			| TK_ID TK_MM
 			{
 				string var_temp = getID();
@@ -646,7 +587,7 @@ E 			: '('E')'
 			} 
 			;
 			
-TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL | TK_TIPO_VOID;
+TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL | TK_TIPO_VOID ;
 
 VALOR		: TK_NUM 
 			{
@@ -654,12 +595,14 @@ VALOR		: TK_NUM
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
+			
 			| TK_REAL
 			{
 				$$.variavel = getID();
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
+			
 			| TK_CHAR
 			{
 				$$.variavel = getID();
@@ -677,19 +620,35 @@ VALOR		: TK_NUM
 	    pois E se resumiu agora a operações aritméticas, variáveis e valores.
 	    
 	    -- Operação com 2 operandos está OK
-	    -- Falta comparação de operações ex.: (a < b) == (b > a)
+	    -- Comparação de operações ex.: OK
 	    -- Falta tratamento de erros da nossa parte para mais de 2 operandos nas operações, pois como limitei a 2,
 	    quando ele encontra mais um apenas dá um erro de "syntax"
 	*/
+	
+OPERANDO    : TK_OP_REL
+            {
+                $$.traducao = $1.traducao;
+            }
+            
+            | TK_OP_LOG
+            {
+                $$.traducao = $1.traducao;
+            }
+            
+            | TK_OP_IGUALDADE
+            {
+                $$.traducao = $1.traducao;
+            }
+            ;
 
-OPERACAO    :   '(' OPERACAO ')'
+OPERACAO    : '(' OPERACAO ')'
             {
                 $$.variavel = $2.variavel;
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
             }
-
-            | E TK_OP_REL E 
+                
+            | E OPERANDO E 
             {	
 				$$.variavel = getID();			
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
@@ -716,103 +675,16 @@ OPERACAO    :   '(' OPERACAO ')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
-            | E TK_OP_LOG E 
-            {	
-				$$.variavel = getID();
-				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
+			| OPERACAO TK_OP_IGUALDADE OPERACAO
+			{
+			    $$.variavel = getID();			
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
 				
-				if($1.tipo != $3.tipo) // então precisa casting
-				{
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
-					
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-						$1.tipo = tipo_retorno;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-						$3.tipo = tipo_retorno;
-					}
-				}
-				
-				$$.tipo = tipo_retorno;
+				$$.tipo = "unsigned short int";
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+			    
 			}
-			/*
-			| OPERACAO "==" OPERACAO
-			{	
-				$$.variavel = getID();			
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
-				
-				if($1.tipo != $3.tipo) // então precisa casting
-				{
-				    cerr << "ERRO: Comparação não pode ser efetuada." << endl;
-				    exit(1);
-				    /*
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-					string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
-                	
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-					}
-					
-				}
-				
-				$$.tipo = "unsigned short int";
-				//cout << "$2 trad " << $2.traducao << "$6 trad " << $6.traducao;
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " == " + $3.variavel + ";\n";
-				
-				
-			}  
-			
-            | '(' OPERACAO ')' "!=" '(' OPERACAO ')'
-			{	
-			    
-			    
-				$$.variavel = getID();			
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
-				
-				if($2.tipo != $6.tipo) // então precisa casting
-				{
-				    //cerr << "ERRO: Comparação não pode ser efetuada." << endl;
-				    
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-					string temp_cast = getID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
-                	
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-					}
-					
-				}
-				
-				$$.tipo = "unsigned short int";
-				$$.traducao = $2.traducao + $6.traducao + "\t" + $$.variavel + " = "+ $2.variavel + " != " + $6.variavel + ";\n";
-			}  
-			*/
-            ;
+			;
 
 %%
 

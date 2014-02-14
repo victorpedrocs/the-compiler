@@ -59,8 +59,8 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 ">"		{ yylval.traducao = yytext; return TK_OP_REL; }
 "<="	{ yylval.traducao = yytext; return TK_OP_REL; }
 "<"		{ yylval.traducao = yytext; return TK_OP_REL; }
-"=="	{ yylval.traducao = yytext; return TK_OP_REL; }
-"!="	{ yylval.traducao = yytext; return TK_OP_REL; }
+"=="	{ yylval.traducao = yytext; return TK_OP_IGUALDADE; }
+"!="	{ yylval.traducao = yytext; return TK_OP_IGUALDADE; }
 
 "&&"	{ yylval.traducao = yytext; return TK_OP_LOG; }
 "||"	{ yylval.traducao = yytext; return TK_OP_LOG; }
