@@ -4,18 +4,10 @@
 
 int main()
 {
-	int soma(int r, int b){
-	}
-    
-    void dizAlo(){
-    	print("Alo");
-   }
     int a;
-    int d;
-    int c;
-   // a = soma(d,c);
-	dizAlo();
-	
+    int b;
+    
+    (a < b)
 	return 0;
 }
 

@@ -216,6 +216,8 @@ ELSE		: TK_ELSE COMANDO
 			
 COMANDO 	: E ';'
 
+            | OPERACAO
+
 			| BLOCO
             
             | ATRIBUICAO ';'
@@ -525,6 +527,7 @@ E 			: '('E')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
+			/*
 			| E TK_OP_LOG E
 			{	
 				$$.variavel = getID();
@@ -554,7 +557,7 @@ E 			: '('E')'
 				$$.tipo = tipo_retorno;
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
-			
+			*/
 			| TK_NEG E
 			{
 				$$.variavel = getID();
@@ -573,6 +576,7 @@ E 			: '('E')'
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
 			}
 
+            /*
 			| E TK_OP_REL E
 			{	
 				$$.variavel = getID();			
@@ -599,7 +603,7 @@ E 			: '('E')'
 				$$.tipo = "unsigned short int";
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
-			
+			*/
 			| TK_ID TK_MM
 			{
 				string var_temp = getID();
@@ -663,6 +667,152 @@ VALOR		: TK_NUM
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			;
+			
+	/*
+	    Tive uma ideia para resolver o problema dos múltiplos operadores lógicos e relacionais,
+	    sei que não é importante, mas queria dar uma pausa em funções.
+	    Enfim, a ideia é não permitir que E derive para E OP_LOG / OP_REL E. 
+	    Pois é isso que faz com que o operador também possa ser uma operação.
+	    A proposta é fazer comando derivar para operação. E os operandos podem ser E, 
+	    pois E se resumiu agora a operações aritméticas, variáveis e valores.
+	    
+	    -- Operação com 2 operandos está OK
+	    -- Falta comparação de operações ex.: (a < b) == (b > a)
+	    -- Falta tratamento de erros da nossa parte para mais de 2 operandos nas operações, pois como limitei a 2,
+	    quando ele encontra mais um apenas dá um erro de "syntax"
+	*/
+
+OPERACAO    :   '(' OPERACAO ')'
+            {
+                $$.variavel = $2.variavel;
+				$$.traducao = $2.traducao;
+				$$.tipo = $2.tipo;
+            }
+
+            | E TK_OP_REL E 
+            {	
+				$$.variavel = getID();			
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
+				
+				if($1.tipo != $3.tipo) // então precisa casting
+				{
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+					string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
+                	
+					if($1.tipo != tipo_cast)
+					{
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
+						$1.variavel = temp_cast;
+					}
+					else
+					{
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
+						$3.variavel = temp_cast;
+					}
+				}
+				
+				$$.tipo = "unsigned short int";
+				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+			}
+			
+            | E TK_OP_LOG E 
+            {	
+				$$.variavel = getID();
+				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
+				
+				if($1.tipo != $3.tipo) // então precisa casting
+				{
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+                	string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
+					
+					if($1.tipo != tipo_cast)
+					{
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
+						$1.variavel = temp_cast;
+						$1.tipo = tipo_retorno;
+					}
+					else
+					{
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
+						$3.variavel = temp_cast;
+						$3.tipo = tipo_retorno;
+					}
+				}
+				
+				$$.tipo = tipo_retorno;
+				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+			}
+			/*
+			| OPERACAO "==" OPERACAO
+			{	
+				$$.variavel = getID();			
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
+				
+				if($1.tipo != $3.tipo) // então precisa casting
+				{
+				    cerr << "ERRO: Comparação não pode ser efetuada." << endl;
+				    exit(1);
+				    /*
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+					string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
+                	
+					if($1.tipo != tipo_cast)
+					{
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
+						$1.variavel = temp_cast;
+					}
+					else
+					{
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
+						$3.variavel = temp_cast;
+					}
+					
+				}
+				
+				$$.tipo = "unsigned short int";
+				//cout << "$2 trad " << $2.traducao << "$6 trad " << $6.traducao;
+				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " == " + $3.variavel + ";\n";
+				
+				
+			}  
+			
+            | '(' OPERACAO ')' "!=" '(' OPERACAO ')'
+			{	
+			    
+			    
+				$$.variavel = getID();			
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
+				
+				if($2.tipo != $6.tipo) // então precisa casting
+				{
+				    //cerr << "ERRO: Comparação não pode ser efetuada." << endl;
+				    
+					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
+					string temp_cast = getID();
+                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
+                	
+					if($1.tipo != tipo_cast)
+					{
+						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
+						$1.variavel = temp_cast;
+					}
+					else
+					{
+						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
+						$3.variavel = temp_cast;
+					}
+					
+				}
+				
+				$$.tipo = "unsigned short int";
+				$$.traducao = $2.traducao + $6.traducao + "\t" + $$.variavel + " = "+ $2.variavel + " != " + $6.variavel + ";\n";
+			}  
+			*/
+            ;
 
 %%
 

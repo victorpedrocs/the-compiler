@@ -4,26 +4,15 @@
 
 using namespace std;
 
-int $temp2(int soma, int r)
-{
-}
-
-void $temp4()
-{
-	strcpy($temp3, "Alo");
-	cout << $temp3 << endl;
-}
-
 int main(void)
 {
-	char $temp3[3];
-	int $temp8;
-	int $temp5;
-	int $temp7;
-	int $temp6;
+	unsigned short int $temp2;
+	int $temp3;
+	int $temp0;
+	int $temp1;
 	//-------------
-	$temp4();
-	$temp8 = 0;
-	return $temp8;
+	$temp2 = $temp0 < $temp1;
+	$temp3 = 0;
+	return $temp3;
 
 }
