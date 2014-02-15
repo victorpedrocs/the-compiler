@@ -275,7 +275,7 @@ COMANDO 	: E ';'
 			}
 			
 			/* while */
-			| TK_WHILE ABRE_LACO '(' IF_PARAM ')' COMANDO
+			| TK_WHILE ABRE_LACO '(' IF_WHILE_PARAM ')' COMANDO
 			{
 				string negacao_condicao = getID();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $4.tipo};
@@ -285,7 +285,7 @@ COMANDO 	: E ';'
 			}
 			
 			/* do while */
-			| TK_DO ABRE_LACO COMANDO TK_WHILE '(' IF_PARAM ')' ';'
+			| TK_DO ABRE_LACO COMANDO TK_WHILE '(' IF_WHILE_PARAM ')' ';'
 			{
 				$$.traducao = "\n\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $3.traducao + $6.traducao + "\tif(" + $6.variavel + ") goto " + pilhaDeLabelsInicio.front() + ";\n\n";
 				desempilha_labels();
@@ -427,7 +427,7 @@ F_PARAMS    : F_PARAMS ',' E
           	}
             ;
             
-IF_PARAM    : E
+IF_WHILE_PARAM    : E
 
             | OPERACAO
             
