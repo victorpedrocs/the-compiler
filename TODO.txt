@@ -1,15 +1,15 @@
 =============== TODO ===============
 
 * casting
-* múltiplos operadores lógicos/relacionais
 * incremento/decremento
 * funcao
 * vetores
-* redeclaração de variáveis
+
 
 
 =============== DONE ===============
 
+* redeclaração de variáveis
 * switch~case
 * entrada do teclado
 * string (!!!) concatenação
@@ -19,3 +19,4 @@
 * resolver shift/reduce do if else
 * return
 * comentários
+* múltiplos operadores lógicos/relacionais
