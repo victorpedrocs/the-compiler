@@ -7,7 +7,10 @@ int main()
     int a;
     int b;
     
-    (a < b) == (b > a)
+    if(a < b){
+    }
+    if(1){
+    }
 	return 0;
 }
 

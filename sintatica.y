@@ -248,7 +248,7 @@ COMANDO 	: E ';'
             }
 			
 			/* if */
-			| TK_IF '(' E ')' COMANDO %prec IFX
+			| TK_IF '(' IF_PARAM ')' COMANDO %prec IFX
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
@@ -261,7 +261,7 @@ COMANDO 	: E ';'
 			}
 
 			/* if else */
-			| TK_IF '(' E ')' COMANDO TK_ELSE COMANDO
+			| TK_IF '(' IF_PARAM ')' COMANDO TK_ELSE COMANDO
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
@@ -427,7 +427,11 @@ F_PARAMS    : F_PARAMS ',' E
           	}
             ;
             
- 
+IF_PARAM    : E
+
+            | OPERACAO
+            
+            ;
 FOR_PARAM	: DECLARACAO
 			
 			| ATRIBUICAO
@@ -623,6 +627,7 @@ VALOR		: TK_NUM
 	    -- Comparação de operações ex.: OK
 	    -- Falta tratamento de erros da nossa parte para mais de 2 operandos nas operações, pois como limitei a 2,
 	    quando ele encontra mais um apenas dá um erro de "syntax"
+	    -- Shift/Reduce 
 	*/
 	
 OPERANDO    : TK_OP_REL
