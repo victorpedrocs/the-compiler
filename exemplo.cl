@@ -1,25 +1,10 @@
-void diz_oi()
-{
-	print("oi");
-}
-
-int soma(int a, int b)
-{
-	return a + b;
-}
-
-float soma(float a, float b)
-{
-	print("sou float");
-	return a + b;
-}
-
 int main()
 {
-	print(soma(1, 4));
-	diz_oi();
-	float i = soma(4.4, 5.2);
-	print(i);
+	int vetor[2][2];
+	
+	vetor[1][1] = 3;
+	
+	print(vetor[1][1]);
+	
 	return 0;
 }
-

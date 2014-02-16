@@ -7,20 +7,20 @@
 #include <utility>
 #include <list>
 #include <vector>
+#include <iterator>
 
 
 using namespace std;
 
 
+
 int main()
 {
-	vector<string> t;
+	int a = 1;
+	string b = "a" + to_string(2);
 	
-	t.push_back("sa");
-
-	printf("%d\n",int(t.size()));
+	cout << b << endl;
+	
+	return 0;
 }
-
-
-
 
