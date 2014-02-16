@@ -81,20 +81,15 @@ list<string> pilhaDeLabelsFim;
 %left TK_NEG
 %nonassoc IFX
 %nonassoc TK_ELSE
+%nonassoc '('
 
 
 %%
 
-S			: ABRE_ESCOPO DECLARACOES MAIN
+S			: ABRE_ESCOPO DECLARACOES FUNCOES
 			{
 				desempilha_mapa();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;\n" << funcoes << "\nint main(void)\n{\n" << declaracoes  <<"\t//-------------\n" << $2.traducao << $3.traducao << "\n}" << endl; 
-			}
-			;
-
-MAIN		: TK_TIPO_INT TK_MAIN '(' ')' BLOCO
-			{
-				$$.traducao = $5.traducao;
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;" << declaracoes << $2.traducao << $3.traducao << endl;
 			}
 			;
 			
@@ -110,6 +105,56 @@ ABRE_ESCOPO	:
 				mapa* mapa_var = new mapa();
 				pilhaDeMapas.push_front(mapa_var);
 			}
+			;
+			
+FUNCOES		: FUNCAO FUNCOES
+			{
+				$$.traducao = $1.traducao + $2.traducao;
+			}
+			
+			|
+			{
+				$$.traducao = "";
+			}
+			;
+			
+FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
+			{	
+				/*string impressao;
+		        impressao = parametros[0].tipo + " " + parametros[0].nome;
+			    for(int i = 1; i < parametros.size(); i++)
+			    	    impressao += ", " + parametros[i].tipo + " " + parametros[i].nome;
+			    	    */
+			
+				if($2.variavel != "main")
+				{
+	            	string temp_funcao = getID();
+					tab_funcoes[$2.variavel] = {temp_funcao, $1.tipo, (int)parametros.size(), parametros};
+					$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
+				}
+				else
+				{
+					tab_funcoes[$2.variavel] = {$2.variavel, $1.tipo, (int)parametros.size(), parametros};
+					$$.traducao = "\n\n" + $1.tipo + " main(";					
+				}
+				
+				if(parametros.size() > 0)
+				{
+			        $$.traducao += parametros[0].tipo + " " + parametros[0].nome;
+			        for(int i = 1; i < parametros.size(); i++)
+			    	    $$.traducao += ", " + parametros[i].tipo + " " + parametros[i].nome;
+				}	
+				
+				$$.traducao += ")\n{\n";
+				$$.traducao += declaracoes;
+				$$.traducao += $7.traducao + "}";
+				
+				
+				parametros.clear();
+				desempilha_mapa();
+				declaracoes = "";
+			}
+
 			;
 
 COMANDOS	: COMANDO COMANDOS
@@ -136,8 +181,10 @@ DECLARACOES	: DECLARACOES DECLARACAO
 
 DECLARACAO	: TIPO TK_ID
             {
+            	string temp_var = getID();
             	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo};   
+                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo};
+                $$.variavel = temp_var;
                 $$.traducao = "";
             }
             
@@ -339,74 +386,49 @@ COMANDO 	: E ';'
 			    $$.traducao = ""; 
 				
 			}
-			*/
-			
-			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
-			{
-	            string temp_funcao = getID();
-				tab_funcoes[$2.variavel] = {temp_funcao, $1.tipo, (int)parametros.size(), parametros}; 
-				
-			
-				funcoes += "\n" + $1.tipo + " " + temp_funcao + '(';
-				
-				if(parametros.size() > 0)
-				{
-			        funcoes += parametros[0].tipo + " " + parametros[0].nome;
-			        for(int i = 1; i < parametros.size(); i++)
-			    	    funcoes += ", " + parametros[i].tipo + " " + parametros[i].nome;
-				}	
-				
-				funcoes += ")\n{\n" + $7.traducao + "}\n";
-				
-				parametros.clear();
-				pilhaDeMapas.pop_front();
-				
-			} 
+			*/ 
 			
             ;
    
 
 F_PARAMS    : F_PARAMS ',' E
-             {
-             	$$.traducao = $1.traducao + $3.traducao;
-             	$$.variavel = $3.variavel;
-				$$.tipo = $3.tipo;
-				
+			{
+				$$.traducao = $1.traducao;
 				if($3.traducao != "") //É uma expressão ou valor
+				{
+					$$.traducao += $3.traducao;
 					parametros.push_back(busca_no_mapa($3.variavel));//Adicionando a lista de parâmetros da função
+				}
 				else //É a derivação de um TK_ID
 					parametros.push_back({$3.variavel, $3.tipo});
-             }
-             
-             | E
-             {				
-             	$$.traducao = $1.traducao;
-             	$$.variavel = $1.variavel;
-				$$.tipo = $1.tipo;
-				
-				if($1.traducao != "") 
+			}
+			
+			| E
+			{
+				if($1.traducao != "")
+				{
+					$$.traducao = $1.traducao;
 					parametros.push_back(busca_no_mapa($1.variavel));
+				}
 				else 
 					parametros.push_back({$1.variavel, $1.tipo});
-				//parametros.push_back(busca_no_mapa($1.variavel));
-
-             }
+			}
 
           	| F_PARAMS ',' DECLARACAO
           	{
-          	    $$.traducao = "";
+          		$$.traducao = $1.traducao + $3.traducao;
 				parametros.push_back({$3.variavel, $3.tipo});
           	}
 
           	| DECLARACAO
           	{
-                $$.traducao = "";
+          		$$.traducao = $1.traducao;
 				parametros.push_back({$1.variavel, $1.tipo});
           	}
           	     	
           	|
           	{
-          	    $$.traducao = "";
+          	   $$.traducao = "";
           	}
             ;
             
@@ -420,11 +442,7 @@ FOR_PARAM	: DECLARACAO
 			
 			| ATRIBUICAO
 			
-			/*
 			| IF_WHILE_PARAM
-			*/
-			
-			| OPERACAO
 			;
 			
 			
@@ -547,7 +565,7 @@ E 			: '('E')'
 				$$.traducao = "\t" + var_temp + " = 1;\n\t" + var_soma + " = " + var_incremento + " " + tipo_op + " " + var_temp + ";\n\t" + var_incremento + " = " + var_soma + ";\n";
 			}
 			
-			| TK_ID
+			| TK_ID %prec IFX
 			{
 				$$.traducao = "";
 				struct info var = busca_no_mapa($1.variavel);
@@ -557,15 +575,16 @@ E 			: '('E')'
 			}
 			
 			/* Chamada de função */
-			/* Gerando um shift/reduce */
-			/*
-			| TK_ID '('F_PARAMS')'
+
+			| TK_ID '(' F_PARAMS ')'
 			{   
 					verifica_parametros_funcao($1.variavel, parametros);
-			       
+					
 			       	$$.tipo = busca_funcao($1.variavel).tipo;
-			        $$.traducao = $3.traducao;
-			        $$.traducao += "\t" + busca_funcao($1.variavel).nome + "(";
+			       	$$.variavel = getID();
+					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
+
+			        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
 			    
 			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
 			 		{
@@ -576,9 +595,7 @@ E 			: '('E')'
 			        
 			    	$$.traducao += ");\n";
 				    parametros.clear();
-			
 			}
-			*/
 			;
 			
 TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL | TK_TIPO_VOID ;
@@ -851,7 +868,6 @@ void getDeclaracoes(mapa* mapa_variaveis)
 	}
 
 	declaracoes += ss.str();
-	
 }
 
 

@@ -23,7 +23,6 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 
 {DELIM} 	{}
 
-"main"		{return TK_MAIN;}
 "continue"	{return TK_CONTINUE;}
 "break"		{return TK_BREAK;}
 "switch"	{return TK_SWITCH;}
