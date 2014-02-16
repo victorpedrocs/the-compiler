@@ -176,7 +176,6 @@ DECLARACAO	: TIPO TK_ID
             
 ATRIBUICAO	: TK_ID '=' E
 			{
-			
 				if($1.tipo != $3.tipo) // então precisa fazer casting
                 {
                 	string tipo_cast = getTipo($1.tipo, "=", $3.tipo);
@@ -199,20 +198,6 @@ ATRIBUICAO	: TK_ID '=' E
 				}	
 			}
 			;
-			/*
-ELSE		: TK_ELSE COMANDO
-			{
-				$$.traducao = $2.traducao;
-			}
-			
-			/*
-			|
-			{
-				$$.traducao = "";
-			}
-			
-			;
-			*/
 			
 COMANDO 	: E ';'
 
@@ -248,7 +233,7 @@ COMANDO 	: E ';'
             }
 			
 			/* if */
-			| TK_IF '(' IF_PARAM ')' COMANDO %prec IFX
+			| TK_IF '(' IF_WHILE_PARAM ')' COMANDO %prec IFX
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
@@ -261,7 +246,7 @@ COMANDO 	: E ';'
 			}
 
 			/* if else */
-			| TK_IF '(' IF_PARAM ')' COMANDO TK_ELSE COMANDO
+			| TK_IF '(' IF_WHILE_PARAM ')' COMANDO TK_ELSE COMANDO
 			{
 				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
@@ -332,10 +317,8 @@ COMANDO 	: E ';'
 			/* case */
 			| TK_CASE VALOR TK_DOISPONTOS COMANDO
 			{
-
 				temporarias.push_back($2);
 				string_case.push_back($4.traducao);			
-				
 			}
 			
 			| TK_CONTINUE ';'
@@ -357,6 +340,7 @@ COMANDO 	: E ';'
 				
 			}
 			*/
+			
 			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 			{
 	            string temp_funcao = getID();
@@ -378,9 +362,10 @@ COMANDO 	: E ';'
 				pilhaDeMapas.pop_front();
 				
 			} 
+			
             ;
    
-                       
+
 F_PARAMS    : F_PARAMS ',' E
              {
              	$$.traducao = $1.traducao + $3.traducao;
@@ -391,8 +376,6 @@ F_PARAMS    : F_PARAMS ',' E
 					parametros.push_back(busca_no_mapa($3.variavel));//Adicionando a lista de parâmetros da função
 				else //É a derivação de um TK_ID
 					parametros.push_back({$3.variavel, $3.tipo});
-				
-					
              }
              
              | E
@@ -408,36 +391,40 @@ F_PARAMS    : F_PARAMS ',' E
 				//parametros.push_back(busca_no_mapa($1.variavel));
 
              }
-          	
+
           	| F_PARAMS ',' DECLARACAO
           	{
           	    $$.traducao = "";
 				parametros.push_back({$3.variavel, $3.tipo});
           	}
-          	
+
           	| DECLARACAO
           	{
                 $$.traducao = "";
 				parametros.push_back({$1.variavel, $1.tipo});
           	}
-          	
+          	     	
           	|
           	{
           	    $$.traducao = "";
           	}
             ;
             
-IF_WHILE_PARAM    : E
+IF_WHILE_PARAM	: E
 
             | OPERACAO
             
             ;
+            
 FOR_PARAM	: DECLARACAO
 			
 			| ATRIBUICAO
 			
-			| E
-
+			/*
+			| IF_WHILE_PARAM
+			*/
+			
+			| OPERACAO
 			;
 			
 			
@@ -540,7 +527,6 @@ E 			: '('E')'
 			
 			| VALOR
 			
-			
 			| TK_STRING
 			{	
 				$$.variavel = getID();
@@ -570,6 +556,9 @@ E 			: '('E')'
 				$$.tamanho = var.tamanho;
 			}
 			
+			/* Chamada de função */
+			/* Gerando um shift/reduce */
+			/*
 			| TK_ID '('F_PARAMS')'
 			{   
 					verifica_parametros_funcao($1.variavel, parametros);
@@ -588,7 +577,8 @@ E 			: '('E')'
 			    	$$.traducao += ");\n";
 				    parametros.clear();
 			
-			} 
+			}
+			*/
 			;
 			
 TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOOL | TK_TIPO_VOID ;
@@ -631,24 +621,15 @@ VALOR		: TK_NUM
 	*/
 	
 OPERANDO    : TK_OP_REL
-            {
-                $$.traducao = $1.traducao;
-            }
             
             | TK_OP_LOG
-            {
-                $$.traducao = $1.traducao;
-            }
             
             | TK_OP_IGUALDADE
-            {
-                $$.traducao = $1.traducao;
-            }
             ;
 
 OPERACAO    : '(' OPERACAO ')'
             {
-                $$.variavel = $2.variavel;
+				$$.variavel = $2.variavel;
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
             }
@@ -678,7 +659,11 @@ OPERACAO    : '(' OPERACAO ')'
 				
 				$$.tipo = "unsigned short int";
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
-			}
+			}		
+			
+			
+			/*
+			// GERANDO SHIFT REDUCE. Precisa mesmo dessa regra? Consegui, aparentemente, continuar resolvendo tudo sem ela...
 			
 			| OPERACAO TK_OP_IGUALDADE OPERACAO
 			{
@@ -688,7 +673,7 @@ OPERACAO    : '(' OPERACAO ')'
 				$$.tipo = "unsigned short int";
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			    
-			}
+			} */
 			;
 
 %%

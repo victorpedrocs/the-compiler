@@ -4,13 +4,6 @@
 
 int main()
 {
-    int a;
-    int b;
-    
-    if(a < b){
-    }
-    if(1){
-    }
 	return 0;
 }
 
