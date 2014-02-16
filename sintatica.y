@@ -46,8 +46,9 @@ string geraLabel();
 void desempilha_labels();
 void desempilha_mapa();
 void verifica_redeclaracao(string var);
-void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros);
-void verifica_retorno_funcao(string var_retorno, string tipo);
+//void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros);
+//void verifica_retorno_funcao(string var_retorno, string tipo);
+void insere_tab_funcoes(string nome, struct info_funcao info);
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -86,11 +87,34 @@ list<string> pilhaDeLabelsFim;
 
 %%
 
-S			: ABRE_ESCOPO DECLARACOES FUNCOES
+S			: ABRE_ESCOPO CODIGOS
 			{
 				desempilha_mapa();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;" << declaracoes << $2.traducao << $3.traducao << endl;
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;" << declaracoes << $2.traducao << endl;
 			}
+			;
+			
+CODIGOS		: CODIGO CODIGOS
+			{
+				$$.traducao = $1.traducao + $2.traducao;
+			}
+			
+			|
+			{
+				$$.traducao = "";
+			}
+			;
+			
+CODIGO		: DECLARACAO ';'
+			
+			| FUNCAO
+
+			/*| TIPO TK_ID '(' ')' ';'
+			{
+				$$.traducao = "encontrei um assinatura";
+			}
+			*/
+
 			;
 			
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
@@ -106,35 +130,19 @@ ABRE_ESCOPO	:
 				pilhaDeMapas.push_front(mapa_var);
 			}
 			;
-			
-FUNCOES		: FUNCAO FUNCOES
-			{
-				$$.traducao = $1.traducao + $2.traducao;
-			}
-			
-			|
-			{
-				$$.traducao = "";
-			}
-			;
-			
+
 FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
-			{	
-				/*string impressao;
-		        impressao = parametros[0].tipo + " " + parametros[0].nome;
-			    for(int i = 1; i < parametros.size(); i++)
-			    	    impressao += ", " + parametros[i].tipo + " " + parametros[i].nome;
-			    	    */
-			
+			{
+				
 				if($2.variavel != "main")
 				{
 	            	string temp_funcao = getID();
-					tab_funcoes[$2.variavel] = {temp_funcao, $1.tipo, (int)parametros.size(), parametros};
+					insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros});
 					$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
 				}
 				else
 				{
-					tab_funcoes[$2.variavel] = {$2.variavel, $1.tipo, (int)parametros.size(), parametros};
+					insere_tab_funcoes($2.variavel, {$2.variavel, $1.tipo, (int)parametros.size(), parametros});
 					$$.traducao = "\n\n" + $1.tipo + " main(";					
 				}
 				
@@ -158,17 +166,6 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 			;
 
 COMANDOS	: COMANDO COMANDOS
-			{
-				$$.traducao = $1.traducao + $2.traducao;
-			}
-			
-			|
-			{
-				$$.traducao = "";
-			}
-			;
-
-DECLARACOES	: DECLARACOES DECLARACAO
 			{
 				$$.traducao = $1.traducao + $2.traducao;
 			}
@@ -216,9 +213,7 @@ DECLARACAO	: TIPO TK_ID
 		        }
 
             }
-            /*
-            | TIPO TK_ID '('F_PARAMS')' ';'
-			*/
+			
             ;
             
 ATRIBUICAO	: TK_ID '=' E
@@ -273,7 +268,6 @@ COMANDO 	: E ';'
             }
             
             /* entrada de usuário */
-            
             | TK_SCAN '(' TK_ID ')' ';'
             {
             	$$.traducao = $3.traducao + "\tcin >> " + busca_no_mapa($3.variavel).nome + ";\n";
@@ -377,19 +371,7 @@ COMANDO 	: E ';'
 			{
 				$$.traducao = "\tgoto " + pilhaDeLabelsFim.front() + ";\n";
 			}
-			
-		
-	
-			/*Assinatura  da Função 
-			| TIPO E ';'
-			{	
-			    $$.traducao = ""; 
-				
-			}
-			*/ 
-			
             ;
-   
 
 F_PARAMS    : F_PARAMS ',' E
 			{
@@ -444,7 +426,6 @@ FOR_PARAM	: DECLARACAO
 			
 			| IF_WHILE_PARAM
 			;
-			
 			
 ABRE_LACO	: 
 			{
@@ -574,18 +555,26 @@ E 			: '('E')'
 				$$.tamanho = var.tamanho;
 			}
 			
+			| CHAMADA_FC
+			;
 			/* Chamada de função */
 
-			| TK_ID '(' F_PARAMS ')'
+CHAMADA_FC	: TK_ID '(' F_PARAMS ')'
 			{   
-					verifica_parametros_funcao($1.variavel, parametros);
-					
-			       	$$.tipo = busca_funcao($1.variavel).tipo;
-			       	$$.variavel = getID();
-					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
+					//verifica_parametros_funcao($1.variavel, parametros);
 
-			        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
-			    
+					$$.tipo = busca_funcao($1.variavel).tipo;
+					
+					if($$.tipo == "void")
+						$$.traducao = $3.traducao + "\t" + busca_funcao($1.variavel).nome + "(";				
+						
+					else
+					{   	
+				       	$$.variavel = getID();
+						(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
+				        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
+					}
+							    
 			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
 			 		{
 			 		    $$.traducao += parametros[0].nome;			
@@ -886,14 +875,19 @@ struct info busca_no_mapa(string var)
 
 struct info_funcao busca_funcao(string nome_funcao)
 {
-	if (tab_funcoes.find(nome_funcao) ==  tab_funcoes.end())         
+	string nome_args = nome_funcao;
+	for(int i = 0; i < parametros.size(); i++)
+		nome_args += parametros[i].tipo;
+		
+	if (tab_funcoes.find(nome_args) ==  tab_funcoes.end())         
 	{
-        cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada anteriormente."	<< endl;
+        cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada ou parâmetros incorretos." << endl;
 		exit(1);
-	} 
-	else return tab_funcoes.find(nome_funcao)->second;
+	}
+	else return tab_funcoes.find(nome_args)->second;
 }
 
+/*
 
 void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros)
 {
@@ -927,6 +921,7 @@ void verifica_retorno_funcao(string var_retorno, string tipo)
 	}
 }
 
+*/
 void desempilha_labels()
 {
 	pilhaDeLabelsFim.pop_front();
@@ -951,6 +946,16 @@ void verifica_redeclaracao(string var)
 			exit(1);
 		}
 }
+
+void insere_tab_funcoes(string nome, struct info_funcao info)
+{
+	/* concatena o nome da funcao com seus parametros */
+	string nome_args = nome;
+	for(int i = 0; i < info.quantidade; i++)
+		nome_args += parametros[i].tipo;
+	tab_funcoes[nome_args] = info;
+}
+
 /*
 
 http://www.quut.com/c/ANSI-C-grammar-y.html
