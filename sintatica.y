@@ -61,7 +61,6 @@ map<string, struct info_funcao> tab_funcoes;
 
 string declaracoes, string_cases, funcoes;
 
-
 vector<YYSTYPE> temporarias;
 vector<struct info> parametros;
 vector<string> string_case;
@@ -115,12 +114,6 @@ CODIGO		: DECLARACAO ';'
 			
 			| FUNCAO
 
-			/*| TIPO TK_ID '(' ')' ';'
-			{
-				$$.traducao = "encontrei um assinatura";
-			}
-			*/
-
 			;
 			
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
@@ -168,7 +161,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 				desempilha_mapa();
 				declaracoes = "";
 			}
-
+			
 			;
 
 COMANDOS	: COMANDO COMANDOS
@@ -491,7 +484,7 @@ E 			: '('E')'
 			}
 			
 			| E TK_SOMA_SUB E
-			{	
+			{
 				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
 
@@ -529,8 +522,7 @@ E 			: '('E')'
 					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				}	
 				
-				$$.tipo = tipo_retorno;
-				
+				$$.tipo = tipo_retorno;			
 			}
 			
 			| E TK_MULT_DIV E
@@ -666,27 +658,12 @@ VALOR		: TK_NUM
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			;
-			
-	/*
-	    Tive uma ideia para resolver o problema dos múltiplos operadores lógicos e relacionais,
-	    sei que não é importante, mas queria dar uma pausa em funções.
-	    Enfim, a ideia é não permitir que E derive para E OP_LOG / OP_REL E. 
-	    Pois é isso que faz com que o operador também possa ser uma operação.
-	    A proposta é fazer comando derivar para operação. E os operandos podem ser E, 
-	    pois E se resumiu agora a operações aritméticas, variáveis e valores.
-	    
-	    -- Operação com 2 operandos está OK
-	    -- Comparação de operações ex.: OK
-	    -- Falta tratamento de erros da nossa parte para mais de 2 operandos nas operações, pois como limitei a 2,
-	    quando ele encontra mais um apenas dá um erro de "syntax"
-	    -- Shift/Reduce 
-	*/
 	
-OPERANDO    : TK_OP_REL
+OPERANDO    : TK_OP_REL // < > <= >=
             
-            | TK_OP_LOG
+            | TK_OP_LOG // && ||
             
-            | TK_OP_IGUALDADE
+            | TK_OP_IGUALDADE // == !=
             ;
 
 OPERACAO    : '(' OPERACAO ')'
@@ -695,9 +672,9 @@ OPERACAO    : '(' OPERACAO ')'
 				$$.traducao = $2.traducao;
 				$$.tipo = $2.tipo;
             }
-                
-            | E OPERANDO E 
-            {	
+            
+            | E OPERANDO E
+            {	            	
 				$$.variavel = getID();			
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
 				
@@ -723,7 +700,6 @@ OPERACAO    : '(' OPERACAO ')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}		
 			
-			
 			/*
 			// GERANDO SHIFT REDUCE. Precisa mesmo dessa regra? Consegui, aparentemente, continuar resolvendo tudo sem ela...
 			
@@ -736,7 +712,14 @@ OPERACAO    : '(' OPERACAO ')'
 				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			    
 			} */
+			
+			| E OPERANDO E OPERANDO E
+			{
+				cerr << "ERRO: múltiplos operadores lógicos/relacionais" << endl;
+				exit(1);
+			}
 			;
+			
 
 %%
 
