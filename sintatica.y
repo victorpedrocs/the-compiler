@@ -88,6 +88,7 @@ list<string> pilhaDeLabelsFim;
 %nonassoc IFX
 %nonassoc TK_ELSE
 %nonassoc '('
+%nonassoc '='
 
 
 %%
@@ -180,7 +181,18 @@ COMANDOS	: COMANDO COMANDOS
 				$$.traducao = "";
 			}
 			;
-
+/*			
+DECLARACOES	: DECLARACAO DECLARACOES
+			{
+				$$.traducao = $1.traducao + $2.traducao;
+			}
+			
+			|
+			{
+				$$.traducao = "";
+			}
+			;
+*/			
 DECLARACAO	: TIPO TK_ID
             {
             	string temp_var = getID();
@@ -189,7 +201,13 @@ DECLARACAO	: TIPO TK_ID
                 $$.variavel = temp_var;
                 $$.traducao = "";
             }
-            
+            /*
+            | TIPO TK_ID '(' DECLARACOES ')'
+            {
+            	cerr << "passei aqui" << endl;
+            	$$.traducao = "";
+            }
+            */
             | TIPO TK_ID TK_TAM_VET
             {
             	string temp_var = getID();
@@ -237,7 +255,7 @@ DECLARACAO	: TIPO TK_ID
             
 ATRIBUICAO	: TK_ID '=' E
 			{
-				if($1.tipo != $3.tipo) // então precisa fazer casting
+				if(busca_no_mapa($1.variavel).tipo != $3.tipo) // então precisa fazer casting
                 {
                 	string tipo_cast = getTipo($1.tipo, "=", $3.tipo);
                 	string temp_cast = getID();
@@ -248,10 +266,10 @@ ATRIBUICAO	: TK_ID '=' E
                 
                 else
                 {
-					if($$.tipo == "string")
+					if($1.tipo == "string")
 					{
 						$$.traducao = $3.traducao + "\tstrcpy(" + busca_no_mapa($1.variavel).nome + ", " + $3.variavel + ");\n";
-						(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho;
+						(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho; // ERRO!!! Não está necessariamente no mapa do topo
 					}
 				
 					else
@@ -287,7 +305,7 @@ COMANDO 	: E ';'
 			/* impressão */
             | TK_PRINT '(' E ')' ';'
             {
-                $$.traducao = $3.traducao + "\tcout << " + $3.variavel + " << endl;\n";
+                $$.traducao = $3.traducao + "\tcout << " + $3.variavel + "<< endl;\n";
             }
             
             | TK_RETURN E ';'

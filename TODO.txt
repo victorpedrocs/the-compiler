@@ -2,9 +2,8 @@
 
 * casting
 * incremento/decremento
-* funcao
-* vetores
-
+* assinatura funcao
+* correção tamanho de string (declarada em outro escopo)
 
 
 =============== DONE ===============
@@ -20,3 +19,5 @@
 * return
 * comentários
 * múltiplos operadores lógicos/relacionais
+* funcao
+* vetores

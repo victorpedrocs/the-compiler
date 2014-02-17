@@ -7,7 +7,7 @@
 ESPACO [ \t]
 DIGITO [0-9]
 LETRA [A-Za-z]
-CARACTER_ESP [?!*@#$:%&=_-]
+CARACTER_ESP [?!*@#$:%&=\\_-]
 
 DELIM {ESPACO}+
 NUM {DIGITO}+
