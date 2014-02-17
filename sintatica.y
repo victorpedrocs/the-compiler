@@ -113,7 +113,6 @@ CODIGOS		: CODIGO CODIGOS
 CODIGO		: DECLARACAO ';'
 			
 			| FUNCAO
-
 			;
 			
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
@@ -162,8 +161,13 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 				declaracoes = "";
 			}
 			
+			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' ';'
+			{
+				$$.traducao = "";
+			}
+			
 			;
-
+			
 COMANDOS	: COMANDO COMANDOS
 			{
 				$$.traducao = $1.traducao + $2.traducao;
@@ -298,7 +302,7 @@ COMANDO 	: E ';'
 			/* impressão */
             | TK_PRINT '(' E ')' ';'
             {
-                $$.traducao = $3.traducao + "\tcout << " + $3.variavel + "<< endl;\n";
+                $$.traducao = $3.traducao + "\tcout << " + $3.variavel + ";\n";
             }
             
             | TK_RETURN E ';'
@@ -446,7 +450,18 @@ F_PARAMS    : F_PARAMS ',' E
           		$$.traducao = $1.traducao;
 				parametros.push_back({$1.variavel, $1.tipo});
           	}
-          	     	
+          	
+          	| F_PARAMS ',' TIPO
+          	{
+          		$$.traducao = $1.traducao + $3.traducao;
+          		parametros.push_back({"", $3.tipo});
+          	}
+          	
+          	| TIPO
+          	{
+          		parametros.push_back({"", $1.tipo});
+          	}
+          	         	  	
           	|
           	{
           	   $$.traducao = "";
@@ -567,7 +582,7 @@ E 			: '('E')'
 			| TK_STRING
 			{	
 				$$.variavel = getID();
-				$$.tamanho = (int) $1.traducao.length()-2;
+				$$.tamanho = (int) $1.traducao.length()-1;
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
 			}
