@@ -1,14 +1,8 @@
-int soma(int, int);
+string a;
 
 int main()
 {
-	string a = "oi";
-	print(a + "\n");
-	print(soma(1, 2));
+	a = "OI";
+	print(a);
 	return 0;
-}
-
-int soma(int a, int b)
-{
-	return a + b;
 }

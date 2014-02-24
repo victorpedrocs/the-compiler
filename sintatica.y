@@ -58,6 +58,8 @@ vector<string> calcula_posicao_vetor(string vetor_declarado, string tamanho);
 vector<int> trata_tamanho(string tamanhos);
 string busca_assinatura(string nome_funcao);
 void verifica_chamadas_pendentes();
+string imprime_parametros_funcao();
+void atualiza_tamanho_string(string, int);
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -181,14 +183,9 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 					$$.traducao = "\n\n" + $1.tipo + " main(";					
 				}
 				
-				if(parametros.size() > 0)
-				{
-					verifica_parametros_funcao();
-			        $$.traducao += parametros[0].tipo + " " + parametros[0].nome;
-			        for(int i = 1; i < parametros.size(); i++)
-			    	    $$.traducao += ", " + parametros[i].tipo + " " + parametros[i].nome;
-				}
+				verifica_parametros_funcao();
 				
+				$$.traducao += imprime_parametros_funcao();
 				$$.traducao += ")\n{\n";
 				$$.traducao += declaracoes;
 				$$.traducao += $7.traducao + "}";
@@ -206,12 +203,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 				insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros, 0});
 				$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
 				
-				if(parametros.size() > 0)
-				{
-			        $$.traducao += parametros[0].tipo + " " + parametros[0].nome;
-			        for(int i = 1; i < parametros.size(); i++)
-			    	    $$.traducao += ", " + parametros[i].tipo + " " + parametros[i].nome;
-				}	
+				$$.traducao += imprime_parametros_funcao();
 				
 				$$.traducao += ");\n";
 				
@@ -232,18 +224,7 @@ COMANDOS	: COMANDO COMANDOS
 				$$.traducao = "";
 			}
 			;
-/*			
-DECLARACOES	: DECLARACAO DECLARACOES
-			{
-				$$.traducao = $1.traducao + $2.traducao;
-			}
-			
-			|
-			{
-				$$.traducao = "";
-			}
-			;
-*/			
+		
 DECLARACAO	: TIPO TK_ID
             {
             	string temp_var = getID();
@@ -252,13 +233,7 @@ DECLARACAO	: TIPO TK_ID
                 $$.variavel = temp_var;
                 $$.traducao = "";
             }
-            /*
-            | TIPO TK_ID '(' DECLARACOES ')'
-            {
-            	cerr << "passei aqui" << endl;
-            	$$.traducao = "";
-            }
-            */
+            
             | TIPO TK_ID TK_TAM_VET
             {
             	string temp_var = getID();
@@ -313,14 +288,13 @@ ATRIBUICAO	: TK_ID '=' E
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
                 	$$.traducao = $3.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
                 	$$.traducao += "\t" + busca_no_mapa($1.variavel).nome + " = " + temp_cast + ";\n";
-                }
-                
+                }                
                 else
                 {
-					if($1.tipo == "string")
+					if(busca_no_mapa($1.variavel).tipo == "string")
 					{
 						$$.traducao = $3.traducao + "\tstrcpy(" + busca_no_mapa($1.variavel).nome + ", " + $3.variavel + ");\n";
-						(*pilhaDeMapas.front())[$1.variavel].tamanho = $3.tamanho; // ERRO!!! Não está necessariamente no mapa do topo
+						atualiza_tamanho_string($1.variavel, $3.tamanho);
 					}
 				
 					else
@@ -957,8 +931,13 @@ void getDeclaracoes(mapa* mapa_variaveis)
 			ss << "\t" << "CHAVE COM ERRO:" << iterator->first << ";\n";
 			
 		if(iterator->second.tipo == "string") // imprime string como vetor de char
-			ss << "\t" << "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
-			
+		{
+			/*if(iterator->second.tamanho == 0)
+				ss << "\t" << "char " << iterator->second.nome << "[1000];\n";
+			else */
+				ss << "\t" << "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
+		}
+		
 		else if(iterator->second.tamanho_vet.size() != 0) // imprime tamanho do vetor
 			ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
 			
@@ -1164,6 +1143,36 @@ void verifica_chamadas_pendentes()
 			exit(1);
 		}
 	}
+}
+
+string imprime_parametros_funcao()
+{
+	string params;
+	if(parametros.size() > 0) //Verifica se a função recebeu parametros
+	{
+		params += parametros[0].tipo + " " + parametros[0].nome;
+		for(int i = 1; i < parametros.size(); i++)
+			params += ", " + parametros[i].tipo + " " + parametros[i].nome;
+			
+		return params;
+	}
+	else
+		return "";
+	
+}
+
+void atualiza_tamanho_string(string nome, int tamanho)
+{
+	
+	list<mapa*>::iterator iterator;
+	mapa_it res;
+	
+	for(iterator = pilhaDeMapas.begin(); iterator != pilhaDeMapas.end(); iterator++)	
+		if((res = (*iterator)->find(nome)) != (*iterator)->end())
+		{
+			res->second.tamanho = tamanho;
+			break;
+		}
 }
 
 /*
