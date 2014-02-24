@@ -71,7 +71,7 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 {ID}		{ yylval.variavel = yytext; return TK_ID; }
 {REAL}		{ yylval.traducao = yytext; yylval.tipo = "float"; return TK_REAL; }
 {CHAR}		{ yylval.traducao = yytext; yylval.tipo = "char"; return TK_CHAR; }
-{STRING} 	{ yylval.traducao = yytext; yylval.tipo = "string";return TK_STRING;}
+{STRING} 	{ yylval.traducao = (yytext + '\0'); yylval.tipo = "string"; return TK_STRING;}
 {COMENTARIO}	{}
 
 .		{ *yytext; }

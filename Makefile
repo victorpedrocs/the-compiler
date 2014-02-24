@@ -6,4 +6,5 @@ all:
 
 		./glf < exemplo.cl > saida.cpp
 		g++ saida.cpp
+		clear
 		./a.out

@@ -33,6 +33,7 @@ struct info_funcao
     string nome, tipo;
     int quantidade;
     vector<struct info> parametros;
+    unsigned short int definida;
 };
 
 int yylex(void);
@@ -51,9 +52,12 @@ void verifica_redeclaracao(string var);
 //void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros);
 //void verifica_retorno_funcao(string var_retorno, string tipo);
 void insere_tab_funcoes(string nome, struct info_funcao info);
+void verifica_parametros_funcao();
 vector<int> trata_tamanho(string tamanhos);
 vector<string> calcula_posicao_vetor(string vetor_declarado, string tamanho);
 vector<int> trata_tamanho(string tamanhos);
+string busca_assinatura(string nome_funcao);
+void verifica_chamadas_pendentes();
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -64,6 +68,7 @@ string declaracoes, string_cases, funcoes;
 vector<YYSTYPE> temporarias;
 vector<struct info> parametros;
 vector<string> string_case;
+vector<struct info_funcao> funcoes_chamadas;
 
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
@@ -95,6 +100,7 @@ list<string> pilhaDeLabelsFim;
 S			: ABRE_ESCOPO CODIGOS
 			{
 				desempilha_mapa();
+				verifica_chamadas_pendentes();
 				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n\nusing namespace std;" << declaracoes << $2.traducao << endl;
 			}
 			;
@@ -128,14 +134,45 @@ ABRE_ESCOPO	:
 				pilhaDeMapas.push_front(mapa_var);
 			}
 			;
+			
+F_PARAMS_DEC: F_PARAMS_DEC ',' DECLARACAO
+          	{
+          		$$.traducao = $1.traducao + $3.traducao;
+				parametros.push_back({$3.variavel, $3.tipo});
+          	}
 
-FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
+          	| DECLARACAO
+          	{
+          		$$.traducao = $1.traducao;
+				parametros.push_back({$1.variavel, $1.tipo});
+          	}
+          	
+          	| F_PARAMS_DEC ',' TIPO
+          	{
+          		$$.traducao = $1.traducao + $3.traducao;
+          		parametros.push_back({"", $3.tipo});
+          	}
+          	
+          	| TIPO
+          	{
+          		parametros.push_back({"", $1.tipo});
+          	}
+          	         	  	
+          	|
+          	{
+          	   $$.traducao = "";
+          	}
+            ;
+
+FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 			{
+				string temp_funcao;
+				if((temp_funcao = busca_assinatura($2.variavel)) == "")
+					temp_funcao = getID();
 				
 				if($2.variavel != "main")
 				{
-	            	string temp_funcao = getID();
-					insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros});
+					insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros, 1});
 					$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
 				}
 				else
@@ -146,10 +183,11 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 				
 				if(parametros.size() > 0)
 				{
+					verifica_parametros_funcao();
 			        $$.traducao += parametros[0].tipo + " " + parametros[0].nome;
 			        for(int i = 1; i < parametros.size(); i++)
 			    	    $$.traducao += ", " + parametros[i].tipo + " " + parametros[i].nome;
-				}	
+				}
 				
 				$$.traducao += ")\n{\n";
 				$$.traducao += declaracoes;
@@ -161,9 +199,25 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' BLOCO
 				declaracoes = "";
 			}
 			
-			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS ')' ';'
+			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' ';'
 			{
-				$$.traducao = "";
+				string temp_funcao = getID();
+
+				insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros, 0});
+				$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
+				
+				if(parametros.size() > 0)
+				{
+			        $$.traducao += parametros[0].tipo + " " + parametros[0].nome;
+			        for(int i = 1; i < parametros.size(); i++)
+			    	    $$.traducao += ", " + parametros[i].tipo + " " + parametros[i].nome;
+				}	
+				
+				$$.traducao += ");\n";
+				
+				parametros.clear();
+				desempilha_mapa();
+				declaracoes = "";
 			}
 			
 			;
@@ -450,17 +504,6 @@ F_PARAMS    : F_PARAMS ',' E
           		$$.traducao = $1.traducao;
 				parametros.push_back({$1.variavel, $1.tipo});
           	}
-          	
-          	| F_PARAMS ',' TIPO
-          	{
-          		$$.traducao = $1.traducao + $3.traducao;
-          		parametros.push_back({"", $3.tipo});
-          	}
-          	
-          	| TIPO
-          	{
-          		parametros.push_back({"", $1.tipo});
-          	}
           	         	  	
           	|
           	{
@@ -584,7 +627,7 @@ E 			: '('E')'
 				$$.variavel = getID();
 				$$.tamanho = (int) $1.traducao.length()-1;
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
-				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao + ");\n";
+				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao  + ");\n";
 			}
 
 			| TK_ID TK_MM
@@ -624,29 +667,38 @@ E 			: '('E')'
 
 CHAMADA_FC	: TK_ID '(' F_PARAMS ')'
 			{   
-					//verifica_parametros_funcao($1.variavel, parametros);
-
-					$$.tipo = busca_funcao($1.variavel).tipo;
+				//verifica_parametros_funcao($1.variavel, parametros);			
+				
+				/*
+					Adicionar cada função chamada mas não definida e adicionar a uma lista.
+					No final da execução, verificar se a função foi definida alguma vez.
+					Se não, erro.
+				*/
+				
+				$$.tipo = busca_funcao($1.variavel).tipo;
+				
+				if(busca_funcao($1.variavel).definida == 0)						
+					funcoes_chamadas.push_back({$1.variavel, "", 0, parametros});				
+				
+				if($$.tipo == "void")
+					$$.traducao = $3.traducao + "\t" + busca_funcao($1.variavel).nome + "(";				
 					
-					if($$.tipo == "void")
-						$$.traducao = $3.traducao + "\t" + busca_funcao($1.variavel).nome + "(";				
-						
-					else
-					{   	
-				       	$$.variavel = getID();
-						(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
-				        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
-					}
-							    
-			 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
-			 		{
-			 		    $$.traducao += parametros[0].nome;			
-			            for(int i = 1; i < parametros.size(); i++)
-			    	        $$.traducao += ", " + parametros[i].nome;	//Montando assim pra não deixar vírgulas no final        
-			 		}
-			        
-			    	$$.traducao += ");\n";
-				    parametros.clear();
+				else
+				{   	
+			       	$$.variavel = getID();
+					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
+			        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
+				}
+						    
+		 		if(parametros.size() > 0) //Verifica se a função recebeu parametros
+		 		{
+		 		    $$.traducao += parametros[0].nome;			
+		            for(int i = 1; i < parametros.size(); i++)
+		    	        $$.traducao += ", " + parametros[i].nome;	//Montando assim pra não deixar vírgulas no final        
+		 		}
+		        
+		    	$$.traducao += ");\n";
+			    parametros.clear();
 			}
 			;
 			
@@ -931,13 +983,26 @@ struct info busca_no_mapa(string var)
 	exit(1);
 }
 
-struct info_funcao busca_funcao(string nome_funcao)
+string busca_assinatura(string nome_funcao)
 {
 	string nome_args = nome_funcao;
 	for(int i = 0; i < parametros.size(); i++)
 		nome_args += parametros[i].tipo;
 		
 	if (tab_funcoes.find(nome_args) ==  tab_funcoes.end())         
+        return "";
+	else 
+		return tab_funcoes.find(nome_args)->second.nome;
+	
+}
+
+struct info_funcao busca_funcao(string nome_funcao)
+{
+	string nome_args = nome_funcao;
+	for(int i = 0; i < parametros.size(); i++)
+		nome_args += parametros[i].tipo;
+		
+	if (tab_funcoes.find(nome_args) == tab_funcoes.end())         
 	{
         cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada ou parâmetros incorretos." << endl;
 		exit(1);
@@ -1069,6 +1134,36 @@ vector<string> calcula_posicao_vetor(string vetor_declarado, string tamanho)
 	retorno.push_back(traducao);
 	
 	return retorno;
+}
+
+void verifica_parametros_funcao()
+{
+	for(int i = 0; i < parametros.size(); i++)
+	{
+	   	if(parametros[i].nome == "") 
+	   	{
+			cerr << "ERRO: variável sem nome definido" << endl;
+			exit(1);
+	  	}
+	}
+}
+
+void verifica_chamadas_pendentes()
+{
+	string nome_args;
+	
+	for(int i = 0; i < funcoes_chamadas.size(); i++)
+	{
+		nome_args = funcoes_chamadas[i].nome;
+		for(int j = 0; j < funcoes_chamadas[i].parametros.size(); j++)
+			nome_args += funcoes_chamadas[i].parametros[j].tipo;
+			
+		if(busca_funcao(nome_args).definida == 0)
+		{
+			cerr << "ERRO: Função \"" << funcoes_chamadas[i].nome << "\" chamada mas não definida." << endl;
+			exit(1);
+		}
+	}
 }
 
 /*
