@@ -65,7 +65,7 @@ string imprime_parametros_funcao();
 void atualiza_tamanho_string(string, int);
 int get_tamanho_vetor(vector<string> vetor);
 vector<string> calcula_posicao_vetor(string vetor_declarado);
-struct atributos gera_cast(struct atributos var1, string op, struct atributos var2);
+struct atributos gera_operacao(struct atributos var1, string op, struct atributos var2);
 
 /* variáveis globais */
 mapa* tab_variaveis = new mapa();
@@ -563,40 +563,17 @@ E 			: '('E')'
 			{
 				$$.variavel = gera_ID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
-                
+                $$ = gera_operacao($1,$2.traducao,$3);
                
         
-				if($1.tipo != $3.tipo) // então precisa casting
-				    $$ = gera_cast($1,$2.traducao,$3);
-				    
-				else
+				//if($1.tipo != $3.tipo) // então precisa casting
+			/*	else
 				{
 				  $$.tipo = tipo_retorno;
 				    $$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			 
-				}
-				//{
-					/*
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = gera_ID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
-					
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-						$1.tipo = tipo_retorno;
-					}
-					
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-						$3.tipo = tipo_retorno;
-					}
-				}
-				
-					*/
+				}*/
+			
 				
 				
 			}
@@ -796,7 +773,7 @@ OPERACAO    : '(' OPERACAO ')'
 						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 					}
-					//$$ = gera_cast($1,$2.traducao, $3);
+					//$$ = gera_operacao($1,$2.traducao, $3);
 				}
 				
 				$$.tipo = "unsigned short int";
@@ -969,7 +946,7 @@ map<string, string> cria_tabela_tipos_retorno()
     return tabela_tipos;   
 }
 
-struct atributos gera_cast(struct atributos var1, string op, struct atributos var2)
+struct atributos gera_operacao(struct atributos var1, string op, struct atributos var2)
 {
     
     if (tab_casting[var1.tipo+op+var2.tipo] == "")
@@ -1035,7 +1012,57 @@ struct atributos gera_cast(struct atributos var1, string op, struct atributos va
                         (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
                         operacao = {traducao, ssvariavel, tipo_cast, tamanho};
                         return operacao;
+            }
+             if(var1.tipo == "string" && var2.tipo == "char")
+            {
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%c\"," + var2.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + var1.variavel + ");\n\tstrcat(" + ssvariavel + ", " + temp_concat + ");\n";
+                        tamanho = var1.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
             } 
+            if(var1.tipo == "char" && var2.tipo == "string")
+            {
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%c\"," + var1.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + temp_concat + ");\n\tstrcat(" + ssvariavel + ", " + var2.variavel + ");\n";
+                        tamanho = var1.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            }
+             if(var1.tipo == "string" && var2.tipo == "string" && op == "+")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + var1.variavel + ");\n\tstrcat(" + ssvariavel + ", " + var2.variavel + ");\n";
+                        tamanho = var1.tamanho + var2.tamanho;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            }
+             if(var1.tipo == "char" && var2.tipo == "char" && op == "+")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        temp_concat = gera_ID();
+                        traducao += "\tsprintf(" + temp_concat + ", \"%c\"," + var1.variavel + ");\n";
+                        
+                        string temp_concat_2 = gera_ID();
+                        traducao += "\tsprintf(" + temp_concat_2 + ", \"%c\"," + var2.variavel + ");\n";
+                        
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + temp_concat + ");\n\tstrcat(" + ssvariavel + ", " + temp_concat_2 + ");\n";
+                        tamanho = var1.tamanho + var2.tamanho;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat_2] = {temp_concat_2, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            }
         }
          
     }
@@ -1056,6 +1083,11 @@ map<string, string> cria_tabela_casting()
     tabela_casting["int+float"] = "float";
     tabela_casting["float+int"] = "float";
     
+    tabela_casting["char+string"] = "string";
+    tabela_casting["string+char"] = "string";
+    tabela_casting["char+char"] = "string";
+    
+    tabela_casting["string+string"] = "string";
    
    
    /*
