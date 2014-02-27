@@ -49,7 +49,8 @@ void yyerror(string);
 string gera_ID(void);
 string getTipo(string, string, string);
 string getTipoCast(string var1, string var2);
-map<string, string> cria_tabela_tipos();
+map<string, string> cria_tabela_tipos_retorno();
+map<string, string> cria_tabela_casting();
 void getDeclaracoes(mapa* mapa_variaveis);
 struct info busca_no_mapa(string var);
 struct info_funcao busca_funcao(string nome_funcao);
@@ -67,9 +68,11 @@ string imprime_parametros_funcao();
 void atualiza_tamanho_string(string, int);
 int get_tamanho_vetor(vector<string> vetor);
 vector<string> calcula_posicao_vetor(string vetor_declarado);
+struct atributos gera_cast(struct atributos var1, string op, struct atributos var2);
 
 mapa* tab_variaveis = new mapa();
-map<string, string> tab_tipos = cria_tabela_tipos();
+map<string, string> tab_tipos = cria_tabela_tipos_retorno();
+map<string, string> tab_casting = cria_tabela_casting();
 map<string, struct info_funcao> tab_funcoes;
 
 string declaracoes, string_cases, funcoes;
@@ -579,6 +582,7 @@ E 			: '('E')'
 				    /* String + int */
 				    else if($1.tipo == "string" && $3.tipo == "int")
                     {
+                        /*
                         string temp_concat = gera_ID();
                         $$.traducao = $1.traducao + $3.traducao;
                         $$.traducao += "\tsprintf(" + temp_concat + ", \"%d\"," + $3.variavel + ");\n";
@@ -586,7 +590,9 @@ E 			: '('E')'
                         $$.tamanho = $1.tamanho + 100;
                         (*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno,$$.tamanho};
                         (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_retorno,$$.tamanho};
-                        
+                        */
+                        $$ = gera_cast($1,$2.traducao,$3);
+
                     } 
                 }
 
@@ -918,7 +924,7 @@ string getTipoCast(string var1, string var2)
 	
 }
 
-map<string, string> cria_tabela_tipos()
+map<string, string> cria_tabela_tipos_retorno()
 {
     map<string, string> tabela_tipos;
     tabela_tipos["int+int"] = "int";
@@ -1001,6 +1007,137 @@ map<string, string> cria_tabela_tipos()
     tabela_tipos["unsigned short int=int"] = "unsigned short int";	
     
     return tabela_tipos;   
+}
+
+struct atributos gera_cast(struct atributos var1, string op, struct atributos var2)
+{
+    
+    if (tab_casting[var1.tipo+op+var2.tipo] == "")
+    {
+        cerr << "ERRO: tipos incompativeis. Nao e possivel realizar casting. (" << var1.tipo << op << var2.tipo << ")" << endl;
+	    exit(EXIT_FAILURE);
+    }
+    else
+    {
+        struct atributos operacao;
+        string tipo_cast = tab_casting[var1.tipo+op+var2.tipo];    
+        string temp_concat = "", traducao = "", ssvariavel = gera_ID();
+        int tamanho = 0;
+        
+        if (tipo_cast == "string") //Concatenações
+        {
+            if(var1.tipo == "string" && var2.tipo == "int")
+            {
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%d\"," + var2.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + var1.variavel + ");\n\tstrcat(" + ssvariavel + ", " + temp_concat + ");\n";
+                        tamanho = var1.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            } 
+            
+            if(var1.tipo == "int" && var2.tipo == "string")
+            {           
+                cout << "Entrei aqui" << endl;
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%d\"," + var1.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + temp_concat + ");\n\tstrcat(" + ssvariavel + ", " + var2.variavel + ");\n";
+                        tamanho = var2.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+                        
+            }
+            if(var1.tipo == "string" && var2.tipo == "float")
+            {
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%f\"," + var2.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + var1.variavel + ");\n\tstrcat(" + ssvariavel + ", " + temp_concat + ");\n";
+                        tamanho = var1.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            } 
+        }
+         
+    }
+
+}
+
+
+map<string, string> cria_tabela_casting()
+{
+    map<string, string> tabela_casting;
+    
+    tabela_casting["int+string"] = "string";
+    tabela_casting["string+int"] = "string";
+    
+    tabela_casting["float+string"] = "string";
+    tabela_casting["string+float"] = "string";
+    
+    tabela_casting["int+float"] = "float";
+    tabela_casting["float+int"] = "float";
+    
+   
+   
+   /*
+    tabela_casting["int+char"] = "char"; //@TODO
+    
+    
+    tabela_casting["string+char"] = "string";
+    
+    
+    
+    tabela_casting["float+string"] = "string";
+    tabela_casting["char+string"] = "string";
+
+    tabela_casting["int-int"] = "int";
+    tabela_casting["int-float"] = "float";
+
+    tabela_casting["int-char"] = "char"; //@TODO
+
+    tabela_casting["int*float"] = "float";
+    tabela_casting["int/float"] = "float";
+    
+    tabela_casting["float>int"] = "float";
+    
+    tabela_casting["float>=int"] = "float";
+    
+    tabela_casting["float<int"] = "float";
+    
+    tabela_casting["float<=int"] = "float";
+    
+    tabela_casting["float==int"] = "float";
+    tabela_casting["string==char"] = "string";
+    
+    tabela_casting["float!=int"] = "float";
+    tabela_casting["string!=char"] = "string";
+    
+    
+    //Atribuições / Declarações
+    tabela_casting["int=float"] = "int";
+    tabela_casting["int=char"] = "int";
+    tabela_casting["int=unsigned short int"] = "int";
+    
+    tabela_casting["float=int"] = "float";
+    tabela_casting["float=unsigned short int"] = "float";
+    
+    tabela_casting["char=int"] = "char";
+    
+    tabela_casting["string=char"] = "string";
+    
+	tabela_casting["float=int"] = "float";
+
+    tabela_casting["unsigned short int=int"] = "unsigned short int";	
+    */
+    return tabela_casting;   
 }
 
 void getDeclaracoes(mapa* mapa_variaveis)
