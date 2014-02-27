@@ -2,8 +2,7 @@
 int main()
 {
 	int a = 9;
-	float b = 5.5 * a;
-	b = 30.6 / 2.2;
+	int b = a + 10;
 	print(b);
 
 	return 0;

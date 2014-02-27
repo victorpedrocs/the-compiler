@@ -958,7 +958,7 @@ struct atributos gera_operacao(struct atributos var1, string op, struct atributo
     
     if (tab_casting[var1.tipo+op+var2.tipo] == "")
     {
-        cerr << "ERRO: tipos incompativeis. Nao e possivel realizar casting. (" << var1.tipo << op << var2.tipo << ")" << endl;
+        cerr << "ERRO: tipos incompativeis. Nao e possivel realizar operacao. (" << var1.tipo << op << var2.tipo << ")" << endl;
 	    exit(EXIT_FAILURE);
     }
     else
@@ -1098,6 +1098,33 @@ struct atributos gera_operacao(struct atributos var1, string op, struct atributo
                         return operacao;
             }
         }
+        if (tipo_cast == "int")
+        {
+             if(var1.tipo == "int" && var2.tipo == "char")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = (int)" + var1.variavel + op + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+             if(var1.tipo == "char" && var2.tipo == "int")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = " + var1.variavel + op + " (int)" + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+             if(var1.tipo == "int" && var2.tipo == "int")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = " + var1.variavel + op + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+        }
     }
 
 }
@@ -1149,7 +1176,34 @@ map<string, string> cria_tabela_casting()
     tabela_casting["float<=float"] = "float";
     tabela_casting["float==float"] = "float";
     
+    tabela_casting["int+int"] = "int";
+    tabela_casting["int-float"] = "int";
+    tabela_casting["int*int"] = "int";
+    tabela_casting["int/int"] = "int";
+    tabela_casting["int>int"] = "int";
+    tabela_casting["int>=int"] = "int";
+    tabela_casting["int<int"] = "int";
+    tabela_casting["int<=int"] = "int";
+    tabela_casting["int==int"] = "int";
     
+    tabela_casting["int+char"] = "int";
+    tabela_casting["char+int"] = "int";
+    tabela_casting["int-char"] = "int";
+    tabela_casting["char-int"] = "int";
+    tabela_casting["int*char"] = "int";
+    tabela_casting["char*int"] = "int";
+    tabela_casting["int/char"] = "int";
+    tabela_casting["char/int"] = "int";
+    tabela_casting["char>int"] = "int";
+    tabela_casting["int>char"] = "int";
+    tabela_casting["char>=int"] = "int";
+    tabela_casting["int>=char"] = "int";
+    tabela_casting["char<int"] = "int";
+    tabela_casting["int<char"] = "int";
+    tabela_casting["char<=int"] = "int";
+    tabela_casting["int<=char"] = "int";
+    tabela_casting["char==int"] = "int";
+    tabela_casting["int==char"] = "int";
    /*
    
     tabela_casting["int+char"] = "char"; //@TODO
@@ -1162,7 +1216,7 @@ map<string, string> cria_tabela_casting()
     
     tabela_casting["string==char"] = "string";
     
-    tabela_casting["float!=int"] = "float";
+    tabela_casting["int!=int"] = "float";
     tabela_casting["string!=char"] = "string";
     
     
