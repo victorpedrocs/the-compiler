@@ -22,7 +22,7 @@ int main(void)
 		{
 			print(matrix[i][j] + " ");
 		}
-	print("\n");
+		print("\n");
 	}
 
 	return 0;

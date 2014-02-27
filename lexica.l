@@ -7,7 +7,7 @@
 ESPACO [ \t]
 DIGITO [0-9]
 LETRA [A-Za-z]
-CARACTER_ESP ["."?!*@#$:%&=\\_-]
+CARACTER_ESP ["."?!\[\]*@#$\:%&=\\_-]
 
 DELIM {ESPACO}+
 NUM {DIGITO}+
@@ -30,8 +30,8 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 "default"	{return TK_DEFAULT;}
 "return"    {return TK_RETURN;}
 ":"			{return TK_DOISPONTOS;}
-"print"	{ return TK_PRINT; }
-"scan"	{ return TK_SCAN; }
+"print"		{ return TK_PRINT; }
+"scan"		{ return TK_SCAN; }
 
 
 "if"		{return TK_IF;}

@@ -86,6 +86,7 @@ vector<string> tamanho_vetor;
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
 list<string> pilhaDeLabelsFim;
+string atribuicoes_globais;
 
 
 
@@ -129,7 +130,7 @@ CODIGOS		: CODIGO CODIGOS
 			}
 			;
 			
-CODIGO		: DECLARACAO ';'
+CODIGO		: DECLARACAO_GLOBAL ';'
 			
 			| FUNCAO
 			;
@@ -141,6 +142,45 @@ BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
 			}
 			;
 			
+			
+DECLARACAO_GLOBAL:	TIPO TK_ID
+			{
+             	string temp_var = gera_ID();
+             	verifica_redeclaracao($2.variavel);
+				(*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo};
+				$$.variavel = temp_var;
+				$$.traducao = "";
+			}
+             
+			| TIPO TK_ID TAM_DEC_VET
+			{
+				string temp_var = gera_ID();
+				verifica_redeclaracao($2.variavel);
+				(*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
+				tamanho_vetor.clear();
+				$$.variavel = temp_var;
+				$$.traducao = "";
+			}
+             
+			| TIPO TK_ID '=' E
+			{
+				verifica_redeclaracao($2.variavel);
+ 				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, $4.tamanho};
+				$$.traducao = "";
+  
+				if(busca_no_mapa($2.variavel).tipo == "string")
+ 				{
+					atribuicoes_globais += $4.traducao + "\tstrcpy(" + busca_no_mapa($2.variavel).nome + ", " + $4.variavel + ");\n";
+					atualiza_tamanho_string($2.variavel, $4.tamanho);
+ 				}
+ 			
+ 				else
+					atribuicoes_globais += $4.traducao + "\t" + busca_no_mapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+ 
+             }
+ 			
+             ;
+ 		
 ABRE_ESCOPO	:
 			{
 				mapa* mapa_var = new mapa();
@@ -199,6 +239,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 				$$.traducao += imprime_parametros_funcao();
 				$$.traducao += ")\n{\n";
 				$$.traducao += declaracoes;
+				$$.traducao += atribuicoes_globais;
 				$$.traducao += $7.traducao + "}";
 				
 				
@@ -501,8 +542,8 @@ F_PARAMS    : F_PARAMS ',' E
 					$$.traducao += $3.traducao;
 					parametros.push_back(busca_no_mapa($3.variavel));//Adicionando a lista de parâmetros da função
 				}
-				else //É a derivação de um TK_ID
-					parametros.push_back({$3.variavel, $3.tipo});
+				else {//É a derivação de um TK_ID
+					parametros.push_back({$3.variavel, $3.tipo}); }
 			}
 			
 			| E
@@ -819,7 +860,7 @@ string gera_ID()
 	static int i = 0;
 
 	stringstream ss;
-	ss << "$temp" << i++;
+	ss << "_$temp" << i++;
 	
 	return ss.str();
 }
@@ -1293,7 +1334,7 @@ struct info_funcao busca_funcao(string nome_funcao)
 	string nome_args = nome_funcao;
 	for(int i = 0; i < parametros.size(); i++)
 		nome_args += parametros[i].tipo;
-		
+
 	if (tab_funcoes.find(nome_args) == tab_funcoes.end())         
 	{
         cerr << "ERRO: Função \"" + nome_funcao + "\" não declarada ou parâmetros incorretos." << endl;
@@ -1376,7 +1417,7 @@ void verifica_parametros_funcao()
 {
 	for(int i = 0; i < parametros.size(); i++)
 	{
-	   	if(parametros[i].nome == "") 
+	   	if(parametros[i].nome == "" && parametros[i].tipo != "void") 
 	   	{
 			cerr << "ERRO: variável sem nome definido" << endl;
 			exit(1);
