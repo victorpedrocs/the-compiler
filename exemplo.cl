@@ -1,42 +1,12 @@
-void soma()
-{
-	print("vamos somar\n");
-}
-
-void dizOI()
-{
-	print("oi\n");
-}
 
 int main()
 {
-	int a = 1;
-	
-	print("Entre com a opcao:\n");
-	
-	while(a != 0)
-	{
-		scan(a);
-		switch(a)
-		{
-			case 1:
-			{
-				soma();
-				break;
-			}
-			case 2:
-			{
-				dizOI();
-				break;
-			}
-			case 0:
-			{
-				print("saindo...\n");
-				break;
-			}
-			default:
-				print("opcao invalida\n");
-		}
-	}
+	int a = 10;
+	string b = "alo" + a;
+	a = 13;
+	print(b);
+	string c = "eu" + a;
+	print(c);
+
 	return 0;
 }
