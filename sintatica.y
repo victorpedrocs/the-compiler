@@ -1,7 +1,7 @@
 %{
 #include <stdlib.h>
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <sstream>
 #include <map>
 #include <utility>
@@ -20,13 +20,15 @@ struct atributos
 {
 	string traducao, variavel, tipo;
 	int tamanho;
+	string conteudo;
 };
 
 struct info
 {
-    string nome, tipo;
+    string nome, tipo, conteudo;
     int tamanho;
     vector<string> tamanho_vet;
+    
 };
 
 struct info_funcao
@@ -242,7 +244,7 @@ DECLARACAO	: TIPO TK_ID
             {
 				string temp_var = gera_ID();
             	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
+                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, "conteudo", get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
                 tamanho_vetor.clear();
                 $$.variavel = temp_var;
                 $$.traducao = "";
@@ -250,10 +252,13 @@ DECLARACAO	: TIPO TK_ID
             
             | TIPO TK_ID '=' E
             {
+            
             	verifica_redeclaracao($2.variavel);
-				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, $4.tamanho};
+            	stringstream ss;
+	            ss << $4.conteudo;
+				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, ss.str(), $4.tamanho};
                 $$.variavel = $2.variavel;//Pra Função
-                
+                $$.conteudo = ss.str();
                 if($1.tipo != $4.tipo) // então precisa fazer casting
                 {
                 	string tipo_cast = getTipo($1.tipo, "=", $4.tipo);
@@ -543,6 +548,26 @@ E 			: '('E')'
 				$$.variavel = gera_ID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
 
+                 if(tipo_retorno == "string")//Operações com string
+				{   
+				    
+				    /*String + String*/
+				    if ($1.tipo == "string" && $3.tipo == "string")
+                    {
+					    $$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + $3.variavel + ");\n"; 
+					    $$.tamanho = $1.tamanho + $3.tamanho;
+					    (*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno, "conteudo",$$.tamanho};
+				    }
+				    /* String + int */
+				    else if($1.tipo == "string" && $3.tipo == "int")
+                    {
+                        $$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", \"" + $3.conteudo + "\");\n"; 
+                        $$.tamanho = $1.tamanho +$3.conteudo.size();//get_tamanho_int($3.traducao);
+					    (*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno, "conteudo",$$.tamanho};
+                    } 
+                    
+                }
+
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
@@ -563,19 +588,7 @@ E 			: '('E')'
 					}
 				}
 				
-				if(tipo_retorno == "string")
-				{
-					$$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + $3.variavel + ");\n"; 
-					$$.tamanho = $1.tamanho + $3.tamanho;
-					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno, $$.tamanho};
 					
-				}
-
-				else
-				{
-					$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";	
-					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
-				}	
 				
 				$$.tipo = tipo_retorno;			
 			}
@@ -623,7 +636,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = gera_ID();
 				$$.tamanho = (int) $1.traducao.length()-1;
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, "conteudo",$$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao  + ");\n";
 			}
 
@@ -641,11 +654,14 @@ E 			: '('E')'
 			
 			| TK_ID %prec IFX
 			{
+			    
 				$$.traducao = "";
-				struct info var = busca_no_mapa($1.variavel);
+		        struct info var = busca_no_mapa($1.variavel);
 				$$.variavel = var.nome;
 				$$.tipo = var.tipo;
 				$$.tamanho = var.tamanho;
+				$$.conteudo = var.conteudo;
+				
 			}
 			
 			| TK_ID TAM_VET
@@ -725,6 +741,7 @@ TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOO
 VALOR		: TK_NUM 
 			{
 				$$.variavel = gera_ID();
+				$$.conteudo = $1.traducao;
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}

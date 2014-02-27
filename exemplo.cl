@@ -1,23 +1,7 @@
 int main()
 {
-	int vet[2][2];
-
-	for(int i = 0; i < 2; i++)
-	{
-		for(int j = 0; j < 2; j++)
-		{
-			vet[i][j] = 0;
-		}
-	}
-	
-	for(int i = 0; i < 2; i++)
-	{
-		for(int j = 0; j < 2; j++)
-		{
-			print(vet[i][j]);
-			print(" ");
-		}
-		print("\n");
-	}	
+	int a = 10;
+	string b = "alo" + a;
+	print(b);
 	return 0;
 }
