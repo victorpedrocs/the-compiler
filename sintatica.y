@@ -589,28 +589,8 @@ E 			: '('E')'
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
-				if($1.tipo != $3.tipo) // então precisa casting
-				{
-					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = gera_ID();
-                	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
-					
-					if($1.tipo != tipo_cast)
-					{
-						$1.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $1.variavel + ";\n";
-						$1.variavel = temp_cast;
-						$1.tipo = tipo_retorno;
-					}
-					else
-					{
-						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
-						$3.variavel = temp_cast;
-						$3.tipo = tipo_retorno;
-					}
-				}
+				$$ = gera_operacao($1,$2.traducao,$3);
 				
-				$$.tipo = tipo_retorno;
-				$$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
 			}
 			
 			| TK_NEG E
@@ -1091,7 +1071,33 @@ struct atributos gera_operacao(struct atributos var1, string op, struct atributo
                         return operacao;
             }
         }
-         
+        if (tipo_cast == "float")
+        {
+             if(var1.tipo == "int" && var2.tipo == "float")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = (float)" + var1.variavel + op + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+             if(var1.tipo == "float" && var2.tipo == "int")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = " + var1.variavel + op + " (float)" + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+             if(var1.tipo == "float" && var2.tipo == "float")
+            {
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += ssvariavel + " = " + var1.variavel + op + var2.variavel + ";\n";
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, 0};
+                        return operacao;
+            }
+        }
     }
 
 }
@@ -1101,14 +1107,12 @@ map<string, string> cria_tabela_casting()
 {
     map<string, string> tabela_casting;
     
+    
     tabela_casting["int+string"] = "string";
     tabela_casting["string+int"] = "string";
     
     tabela_casting["float+string"] = "string";
     tabela_casting["string+float"] = "string";
-    
-    tabela_casting["int+float"] = "float";
-    tabela_casting["float+int"] = "float";
     
     tabela_casting["char+string"] = "string";
     tabela_casting["string+char"] = "string";
@@ -1116,35 +1120,46 @@ map<string, string> cria_tabela_casting()
     
     tabela_casting["string+string"] = "string";
    
-   
+    tabela_casting["int+float"] = "float";
+    tabela_casting["float+int"] = "float";
+    tabela_casting["int-float"] = "float";
+    tabela_casting["float-int"] = "float";
+    tabela_casting["int*float"] = "float";
+    tabela_casting["float*int"] = "float";
+    tabela_casting["int/float"] = "float";
+    tabela_casting["float/int"] = "float";
+    tabela_casting["float>int"] = "float";
+    tabela_casting["int>float"] = "float";
+    tabela_casting["float>=int"] = "float";
+    tabela_casting["int>=float"] = "float";
+    tabela_casting["float<int"] = "float";
+    tabela_casting["int<float"] = "float";
+    tabela_casting["float<=int"] = "float";
+    tabela_casting["int<=float"] = "float";
+    tabela_casting["float==int"] = "float";
+    tabela_casting["int==float"] = "float";
+    
+    tabela_casting["float+float"] = "float";
+    tabela_casting["float-float"] = "float";
+    tabela_casting["float*float"] = "float";
+    tabela_casting["float/float"] = "float";
+    tabela_casting["float>float"] = "float";
+    tabela_casting["float>=float"] = "float";
+    tabela_casting["float<float"] = "float";
+    tabela_casting["float<=float"] = "float";
+    tabela_casting["float==float"] = "float";
+    
+    
    /*
+   
     tabela_casting["int+char"] = "char"; //@TODO
     
-    
-    tabela_casting["string+char"] = "string";
-    
-    
-    
-    tabela_casting["float+string"] = "string";
-    tabela_casting["char+string"] = "string";
-
     tabela_casting["int-int"] = "int";
-    tabela_casting["int-float"] = "float";
-
+    
     tabela_casting["int-char"] = "char"; //@TODO
 
-    tabela_casting["int*float"] = "float";
-    tabela_casting["int/float"] = "float";
     
-    tabela_casting["float>int"] = "float";
     
-    tabela_casting["float>=int"] = "float";
-    
-    tabela_casting["float<int"] = "float";
-    
-    tabela_casting["float<=int"] = "float";
-    
-    tabela_casting["float==int"] = "float";
     tabela_casting["string==char"] = "string";
     
     tabela_casting["float!=int"] = "float";

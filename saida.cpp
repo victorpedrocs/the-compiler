@@ -7,21 +7,27 @@ using namespace std;
 
 int main()
 {
-	char $temp0;
-	char $temp3[100];
-	char $temp4[100];
-	char $temp5[100];
-	int $temp7;
-	char $temp1;
-	char $temp6[0];
-	$temp0 = 'K';
+	int $temp0;
+	int $temp10;
+	float $temp2;
+	float $temp3;
+	float $temp4;
+	float $temp6;
+	float $temp7;
+	float $temp8;
+	float $temp9;
+	int $temp1;
+	float $temp5;
+	$temp0 = 9;
 	$temp1 = $temp0;
-	sprintf($temp4, "%c",$temp1);
-	sprintf($temp5, "%c",$temp1);
-	strcpy($temp3, $temp4);
-	strcat($temp3, $temp5);
-	strcpy($temp6, $temp3);
-	cout << $temp6;
-	$temp7 = 0;
-	return $temp7;
+	$temp2 = 5.5;
+$temp4 = $temp2* (float)$temp1;
+	$temp5 = $temp4;
+	$temp6 = 30.6;
+	$temp7 = 2.2;
+$temp9 = $temp6/$temp7;
+	$temp5 = $temp9;
+	cout << $temp5;
+	$temp10 = 0;
+	return $temp10;
 }
