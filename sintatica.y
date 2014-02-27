@@ -43,11 +43,12 @@ struct info_funcao
 
 #define MAX_STRING_INPUT 1000
 
-/* funcões */
+
 int yylex(void);
 void yyerror(string);
 string gera_ID(void);
 string getTipo(string, string, string);
+string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos_retorno();
 map<string, string> cria_tabela_casting();
 void getDeclaracoes(mapa* mapa_variaveis);
@@ -57,6 +58,8 @@ string geraLabel();
 void desempilha_labels();
 void desempilha_mapa();
 void verifica_redeclaracao(string var);
+//void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros);
+//void verifica_retorno_funcao(string var_retorno, string tipo);
 void insere_tab_funcoes(string nome, struct info_funcao info);
 void verifica_parametros_funcao();
 string busca_assinatura(string nome_funcao);
@@ -67,17 +70,19 @@ int get_tamanho_vetor(vector<string> vetor);
 vector<string> calcula_posicao_vetor(string vetor_declarado);
 struct atributos gera_operacao(struct atributos var1, string op, struct atributos var2);
 
-/* variáveis globais */
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos_retorno();
 map<string, string> tab_casting = cria_tabela_casting();
 map<string, struct info_funcao> tab_funcoes;
+
 string declaracoes, string_cases, funcoes;
+
 vector<YYSTYPE> temporarias;
 vector<struct info> parametros;
 vector<string> string_case;
 vector<struct info_funcao> funcoes_chamadas;
 vector<string> tamanho_vetor;
+
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
 list<string> pilhaDeLabelsFim;
@@ -601,7 +606,7 @@ E 			: '('E')'
 			{	
 				$$.variavel = gera_ID();
 				$$.tamanho = (int) $1.traducao.length()-1;
-				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo,$$.tamanho}; // -2 para descontar as aspas; +1 para '\0'
+				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo,$$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao  + ");\n";
 			}
 
@@ -665,7 +670,15 @@ TAM_VET_	: TAM_VET_ '[' E ']'
 			;
 			/* Chamada de função */
 CHAMADA_FC	: TK_ID '(' F_PARAMS ')'
-			{				
+			{   
+				//verifica_parametros_funcao($1.variavel, parametros);			
+				
+				/*
+					Adicionar cada função chamada mas não definida e adicionar a uma lista.
+					No final da execução, verificar se a função foi definida alguma vez.
+					Se não, erro.
+				*/
+				
 				$$.tipo = busca_funcao($1.variavel).tipo;
 				
 				if(busca_funcao($1.variavel).definida == 0)						
@@ -839,6 +852,20 @@ string getTipo(string var1, string op, string var2)
 	
 	cerr << "ERRO: tipos incompativeis (" << var1 << op << var2 << ")" << endl;
 	exit(EXIT_FAILURE);
+}
+
+//não está funcionando mais depois da string.
+string getTipoCast(string var1, string var2)
+{
+
+	if(var1 == "float" || var2 == "float")
+		return "float";
+		
+	else if (var1 == "string" || var2 == "string")	
+		return "string";
+		
+	else return "int";
+	
 }
 
 map<string, string> cria_tabela_tipos_retorno()
@@ -1150,7 +1177,7 @@ map<string, string> cria_tabela_casting()
     tabela_casting["float==float"] = "float";
     
     tabela_casting["int+int"] = "int";
-    tabela_casting["int-float"] = "int";
+    tabela_casting["int-int"] = "int";
     tabela_casting["int*int"] = "int";
     tabela_casting["int/int"] = "int";
     tabela_casting["int>int"] = "int";
@@ -1277,6 +1304,29 @@ struct info_funcao busca_funcao(string nome_funcao)
 
 /*
 
+void verifica_parametros_funcao(string nome_funcao, vector<struct info> parametros)
+{
+	struct info_funcao funcao = tab_funcoes[nome_funcao];
+	
+	busca_funcao(nome_funcao);	
+	
+	if(parametros.size() != funcao.parametros.size())
+	{
+		cerr << "ERRO: Quantidade de parâmetros diferente do esperado." << endl;
+		exit(1);
+	}
+			   
+	
+			   
+	for(int i = 0; i < parametros.size(); i++)			   			
+	    if (funcao.parametros[0].tipo != parametros[i].tipo)
+	    {
+	    	cerr << "ERRO: Parâmetros com tipos diferentes." << endl;
+			exit(1);
+	    }
+			   
+}
+
 void verifica_retorno_funcao(string var_retorno, string tipo)
 {
 	if(busca_no_mapa(var_retorno).tipo != tipo)
@@ -1287,7 +1337,6 @@ void verifica_retorno_funcao(string var_retorno, string tipo)
 }
 
 */
-
 void desempilha_labels()
 {
 	pilhaDeLabelsFim.pop_front();
@@ -1319,7 +1368,6 @@ void insere_tab_funcoes(string nome, struct info_funcao info)
 	string nome_args = nome;
 	for(int i = 0; i < info.quantidade; i++)
 		nome_args += parametros[i].tipo;
-	/* insere */
 	tab_funcoes[nome_args] = info;
 }
 
@@ -1408,19 +1456,24 @@ vector<string> calcula_posicao_vetor(string vetor_declarado)
 	string temp_aux2 = gera_ID();
 	(*pilhaDeMapas.front())[temp_aux2] = {temp_aux2, "int"};
 	
-	traducao += "\t" + temp_pos + " = 0;\n";
+	traducao += "\t" + temp_pos + " = 0;//83\n";
+	
+	//int aux, pos = 0; @here
 	
 	for(int i = 0; i < tamanhos_declaracao.size(); i++)
 	{
-		traducao += "\t" + temp_aux + " = " + tamanhos_chamada[i] + ";\n";
+		//aux = tamanhos_chamada[i];
+		traducao += "\t" + temp_aux + " = " + tamanhos_chamada[i] + ";//1190\n";
 		
 		for(int j = (tamanhos_declaracao.size() - 1); j > i; j--)
 		{
-			traducao += "\t" + temp_aux2 + " = " + tamanhos_declaracao[j] + ";\n"; 
-			traducao += "\t" + temp_aux + " = " + temp_aux + " * " + temp_aux2 + ";\n";
+			//aux *= tamanhos_declaracao[j];
+			traducao += "\t" + temp_aux2 + " = " + tamanhos_declaracao[j] + ";//95\n"; 
+			traducao += "\t" + temp_aux + " = " + temp_aux + " * " + temp_aux2 + ";//96\n";
 		}
 		
-		traducao += "\t" + temp_pos + " = " + temp_pos + " + " + temp_aux + ";\n";
+		//pos += aux;
+		traducao += "\t" + temp_pos + " = " + temp_pos + " + " + temp_aux + ";//1200\n";
 	}
 	
 	retorno.push_back(temp_pos);
@@ -1428,3 +1481,9 @@ vector<string> calcula_posicao_vetor(string vetor_declarado)
 	
 	return retorno;
 }
+
+/*
+
+http://www.quut.com/c/ANSI-C-grammar-y.html
+
+*/
