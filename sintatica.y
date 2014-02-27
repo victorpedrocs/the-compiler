@@ -86,7 +86,7 @@ list<string> pilhaDeLabelsFim;
 %}
 
 %token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN TK_OP_IGUALDADE
-%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE 
+%token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE TK_DEFAULT
 %token TK_FIM TK_ERROR
 
 %start S
@@ -362,7 +362,8 @@ COMANDO 	: E ';'
             /* entrada de usuário */
             | TK_SCAN '(' TK_ID ')' ';'
             {
-            	$$.traducao = $3.traducao + "\tcin >> " + busca_no_mapa($3.variavel).nome + ";\n";
+            	
+            	$$.traducao = "\tcin >> " + busca_no_mapa($3.variavel).nome + ";\n";
             	if(busca_no_mapa($3.variavel).tipo == "string")
             		atualiza_tamanho_string($3.variavel, MAX_STRING_INPUT);
             }
@@ -431,22 +432,34 @@ COMANDO 	: E ';'
 			}
 			
 			/* switch */
-			| TK_SWITCH '(' E ')' COMANDO
+			| TK_SWITCH ABRE_LACO '(' E ')' COMANDO
 			{
-				$$.traducao = $3.traducao;
+				$$.traducao = "\n\t" + pilhaDeLabelsInicio.front() + ":\n";
+				$$.traducao += $4.traducao;
 				
   				for(int i = 0; i < temporarias.size(); i++)
   				{
-  					string var_comparacao = gera_ID();
   					string label_case = geraLabel();
-  					(*pilhaDeMapas.front())[var_comparacao] = {var_comparacao, "unsigned short int"};
   					
-					$$.traducao += temporarias[i].traducao + "\t" + var_comparacao + " = " + temporarias[i].variavel + " == " + $3.variavel + ";\n";
-					$$.traducao += "\tif(" + var_comparacao + ") goto " + label_case + ";\n";
+  					if(temporarias[i].variavel == "default")
+  						$$.traducao += "\tgoto " + label_case + ";\n";
+
+  					else
+  					{
+  						string var_comparacao = gera_ID();
+	  					(*pilhaDeMapas.front())[var_comparacao] = {var_comparacao, "unsigned short int"};
+	  					
+						$$.traducao += temporarias[i].traducao + "\t" + var_comparacao + " = " + temporarias[i].variavel + " == " + $4.variavel + ";\n";
+						$$.traducao += "\tif(" + var_comparacao + ") goto " + label_case + ";\n";
+					}
+					
 					string_cases += "\n\t" + label_case + ":\n" + string_case[i];
 				}
-					 
+				
 				$$.traducao += string_cases;
+				$$.traducao += "\n\t" + pilhaDeLabelsFim.front() + ":\n";
+				desempilha_labels();
+				
 			}
 			
 			/* case */
@@ -454,6 +467,13 @@ COMANDO 	: E ';'
 			{
 				temporarias.push_back($2);
 				string_case.push_back($4.traducao);			
+			}
+			
+			/* case default */
+			| TK_DEFAULT TK_DOISPONTOS COMANDO
+			{
+				temporarias.push_back({"", "default"});
+				string_case.push_back($3.traducao);	
 			}
 			
 			| TK_CONTINUE ';'

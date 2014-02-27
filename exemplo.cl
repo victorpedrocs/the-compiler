@@ -1,23 +1,42 @@
+void soma()
+{
+	print("vamos somar\n");
+}
+
+void dizOI()
+{
+	print("oi\n");
+}
+
 int main()
 {
-	int vet[2][2];
-
-	for(int i = 0; i < 2; i++)
+	int a = 1;
+	
+	print("Entre com a opcao:\n");
+	
+	while(a != 0)
 	{
-		for(int j = 0; j < 2; j++)
+		scan(a);
+		switch(a)
 		{
-			vet[i][j] = 0;
+			case 1:
+			{
+				soma();
+				break;
+			}
+			case 2:
+			{
+				dizOI();
+				break;
+			}
+			case 0:
+			{
+				print("saindo...\n");
+				break;
+			}
+			default:
+				print("opcao invalida\n");
 		}
 	}
-	
-	for(int i = 0; i < 2; i++)
-	{
-		for(int j = 0; j < 2; j++)
-		{
-			print(vet[i][j]);
-			print(" ");
-		}
-		print("\n");
-	}	
 	return 0;
 }
