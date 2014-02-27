@@ -3,35 +3,25 @@
 #include <string.h>
 #include<string>
 #include <stdio.h>
-
 using namespace std;
-
-	int _$temp0;
-	int _$temp1;
-
 
 int main()
 {
-<<<<<<< HEAD
 	float $temp0;
 	char $temp2[4];
-	char $temp4[0];
-	int $temp6;
+	char $temp4[100];
+	char $temp5[100];
+	int $temp7;
 	float $temp1;
-	char $temp5[4];
-	$temp0 = 10.9;
+	char $temp6[100];
+	$temp0 = 10.493;
 	$temp1 = $temp0;
 	strcpy($temp2, "ola");
-	strcpy($temp5, $temp3);
-	cout << $temp5;
-	$temp6 = 0;
-	return $temp6;
-=======
-	int _$temp2;
-	_$temp0 = 2332;
-	_$temp1 = _$temp0;
-	cout << _$temp1;
-	_$temp2 = 0;
-	return _$temp2;
->>>>>>> 5c13a53741c767aacc3b7b09f21754b04825db96
+	sprintf($temp5, "%g",$temp1);
+	strcpy($temp4, $temp5);
+	strcat($temp4, $temp2);
+	strcpy($temp6, $temp4);
+	cout << $temp6;
+	$temp7 = 0;
+	return $temp7;
 }

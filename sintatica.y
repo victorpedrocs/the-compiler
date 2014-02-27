@@ -86,7 +86,6 @@ vector<string> tamanho_vetor;
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
 list<string> pilhaDeLabelsFim;
-string atribuicoes_globais = "";
 
 
 
@@ -115,7 +114,7 @@ S			: ABRE_ESCOPO CODIGOS
 			{
 				desempilha_mapa();
 				verifica_chamadas_pendentes();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n#include<string>\n#include <stdio.h>\n\nusing namespace std;\n\n" << declaracoes << $2.traducao << endl;
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n#include<string>\n#include <stdio.h>\nusing namespace std;" << declaracoes << $2.traducao << endl;
 			}
 			;
 			
@@ -130,50 +129,10 @@ CODIGOS		: CODIGO CODIGOS
 			}
 			;
 			
-CODIGO		: DECLARACAO_GLOBAL ';'
+CODIGO		: DECLARACAO ';'
 			
 			| FUNCAO
 			;
-			
-DECLARACAO_GLOBAL:	TIPO TK_ID
-            {
-            	string temp_var = gera_ID();
-            	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo};
-                $$.variavel = temp_var;
-                $$.traducao = "";
-            }
-            
-            | TIPO TK_ID TAM_DEC_VET
-            {
-				string temp_var = gera_ID();
-            	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
-                tamanho_vetor.clear();
-                $$.variavel = temp_var;
-                $$.traducao = "";
-            }
-            
-            | TIPO TK_ID '=' E
-            {
-            	verifica_redeclaracao($2.variavel);
-				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, $4.tamanho};
-                $$.traducao = "";
-                
-                //CASTING
-                
-                if(busca_no_mapa($2.variavel).tipo == "string")
-				{
-					atribuicoes_globais += $4.traducao + "\tstrcpy(" + busca_no_mapa($2.variavel).nome + ", " + $4.variavel + ");\n";
-					atualiza_tamanho_string($2.variavel, $4.tamanho);
-				}
-			
-				else
-					atribuicoes_globais += $4.traducao + "\t" + busca_no_mapa($2.variavel).nome + " = " + $4.variavel + ";\n";
-
-            }
-			
-            ;
 			
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
 			{
@@ -240,7 +199,6 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 				$$.traducao += imprime_parametros_funcao();
 				$$.traducao += ")\n{\n";
 				$$.traducao += declaracoes;
-				$$.traducao += atribuicoes_globais;
 				$$.traducao += $7.traducao + "}";
 				
 				
@@ -610,36 +568,20 @@ E 			: '('E')'
 			{
 				$$.variavel = gera_ID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
-
-                 if(tipo_retorno == "string")//Operações com string
-				{   
-				    
-				    /*String + String*/
-				    if ($1.tipo == "string" && $3.tipo == "string")
-                    {
-					    $$.traducao = $1.traducao + $3.traducao + "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + $3.variavel + ");\n"; 
-					    $$.tamanho = $1.tamanho + $3.tamanho;
-					    (*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno ,$$.tamanho};
-				    }
-				    /* String + int */
-				    else if($1.tipo == "string" && $3.tipo == "int")
-                    {
-                        /*
-                        string temp_concat = gera_ID();
-                        $$.traducao = $1.traducao + $3.traducao;
-                        $$.traducao += "\tsprintf(" + temp_concat + ", \"%d\"," + $3.variavel + ");\n";
-                        $$.traducao += "\tstrcpy(" + $$.variavel + ", " + $1.variavel + ");\n\tstrcat(" + $$.variavel + ", " + temp_concat + ");\n";
-                        $$.tamanho = $1.tamanho + 100;
-                        (*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno,$$.tamanho};
-                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_retorno,$$.tamanho};
-                        */
-                        $$ = gera_cast($1,$2.traducao,$3);
-
-                    } 
-                }
-
+                
+               
+        
 				if($1.tipo != $3.tipo) // então precisa casting
+				    $$ = gera_cast($1,$2.traducao,$3);
+				    
+				else
 				{
+				  $$.tipo = tipo_retorno;
+				    $$.traducao = $1.traducao + $3.traducao + "\t" + $$.variavel + " = "+ $1.variavel + " " + $2.traducao + " " + $3.variavel + ";\n";
+			 
+				}
+				//{
+					/*
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
                 	string temp_cast = gera_ID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
@@ -650,6 +592,7 @@ E 			: '('E')'
 						$1.variavel = temp_cast;
 						$1.tipo = tipo_retorno;
 					}
+					
 					else
 					{
 						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
@@ -658,9 +601,9 @@ E 			: '('E')'
 					}
 				}
 				
-					
+					*/
 				
-				$$.tipo = tipo_retorno;			
+				
 			}
 			
 			| E TK_MULT_DIV E
@@ -851,6 +794,7 @@ OPERACAO    : '(' OPERACAO ')'
 				
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
+				    
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
 					string temp_cast = gera_ID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
@@ -865,6 +809,7 @@ OPERACAO    : '(' OPERACAO ')'
 						$3.traducao += "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
 						$3.variavel = temp_cast;
 					}
+					//$$ = gera_cast($1,$2.traducao, $3);
 				}
 				
 				$$.tipo = "unsigned short int";
@@ -917,7 +862,7 @@ string gera_ID()
 	static int i = 0;
 
 	stringstream ss;
-	ss << "_$temp" << i++;
+	ss << "$temp" << i++;
 	
 	return ss.str();
 }
@@ -1083,7 +1028,6 @@ struct atributos gera_cast(struct atributos var1, string op, struct atributos va
             
             if(var1.tipo == "int" && var2.tipo == "string")
             {           
-                cout << "Entrei aqui" << endl;
                         temp_concat = gera_ID();
                         traducao = var1.traducao + var2.traducao;
                         traducao += "\tsprintf(" + temp_concat + ", \"%d\"," + var1.variavel + ");\n";
@@ -1099,8 +1043,20 @@ struct atributos gera_cast(struct atributos var1, string op, struct atributos va
             {
                         temp_concat = gera_ID();
                         traducao = var1.traducao + var2.traducao;
-                        traducao += "\tsprintf(" + temp_concat + ", \"%f\"," + var2.variavel + ");\n";
+                        traducao += "\tsprintf(" + temp_concat + ", \"%g\"," + var2.variavel + ");\n";
                         traducao += "\tstrcpy(" + ssvariavel + ", " + var1.variavel + ");\n\tstrcat(" + ssvariavel + ", " + temp_concat + ");\n";
+                        tamanho = var1.tamanho + 100;
+                        (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
+                        (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
+                        operacao = {traducao, ssvariavel, tipo_cast, tamanho};
+                        return operacao;
+            } 
+            if(var1.tipo == "float" && var2.tipo == "string")
+            {
+                        temp_concat = gera_ID();
+                        traducao = var1.traducao + var2.traducao;
+                        traducao += "\tsprintf(" + temp_concat + ", \"%g\"," + var1.variavel + ");\n";
+                        traducao += "\tstrcpy(" + ssvariavel + ", " + temp_concat + ");\n\tstrcat(" + ssvariavel + ", " + var2.variavel + ");\n";
                         tamanho = var1.tamanho + 100;
                         (*pilhaDeMapas.front())[ssvariavel] = {ssvariavel, tipo_cast,100};
                         (*pilhaDeMapas.front())[temp_concat] = {temp_concat, tipo_cast,100};
