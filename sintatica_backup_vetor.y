@@ -1,5 +1,4 @@
 %{
-#include <stdlib.h>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -43,7 +42,7 @@ struct info_funcao
 
 int yylex(void);
 void yyerror(string);
-string gera_ID(void);
+string getID(void);
 string getTipo(string, string, string);
 string getTipoCast(string var1, string var2);
 map<string, string> cria_tabela_tipos();
@@ -58,12 +57,13 @@ void verifica_redeclaracao(string var);
 //void verifica_retorno_funcao(string var_retorno, string tipo);
 void insere_tab_funcoes(string nome, struct info_funcao info);
 void verifica_parametros_funcao();
+vector<int> trata_tamanho(string tamanhos);
+vector<string> calcula_posicao_vetor(string vetor_declarado, string tamanho);
+vector<string> trata_tamanho(string tamanhos);
 string busca_assinatura(string nome_funcao);
 void verifica_chamadas_pendentes();
 string imprime_parametros_funcao();
 void atualiza_tamanho_string(string, int);
-int get_tamanho_vetor(vector<string> vetor);
-vector<string> calcula_posicao_vetor(string vetor_declarado);
 
 mapa* tab_variaveis = new mapa();
 map<string, string> tab_tipos = cria_tabela_tipos();
@@ -75,7 +75,6 @@ vector<YYSTYPE> temporarias;
 vector<struct info> parametros;
 vector<string> string_case;
 vector<struct info_funcao> funcoes_chamadas;
-vector<string> tamanho_vetor;
 
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
@@ -85,7 +84,7 @@ list<string> pilhaDeLabelsFim;
 
 %}
 
-%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN TK_OP_IGUALDADE
+%token TK_NUM TK_REAL TK_BOOL TK_CHAR TK_STRING TK_SOMA_SUB TK_MULT_DIV TK_OP_REL TK_OP_LOG TK_IF TK_ELSE TK_CONTINUE TK_BREAK TK_DOISPONTOS TK_PRINT TK_SCAN TK_RETURN TK_OP_IGUALDADE TK_TAM_VET
 %token TK_MAIN TK_ID TK_TIPO_INT TK_TIPO_REAL TK_TIPO_CHAR TK_TIPO_STRING TK_TIPO_BOOL TK_TIPO_VOID TK_WHILE TK_DO TK_FOR TK_MM TK_SWITCH TK_CASE 
 %token TK_FIM TK_ERROR
 
@@ -175,7 +174,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 			{
 				string temp_funcao;
 				if((temp_funcao = busca_assinatura($2.variavel)) == "")
-					temp_funcao = gera_ID();
+					temp_funcao = getID();
 				
 				if($2.variavel != "main")
 				{
@@ -203,7 +202,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 			
 			| TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' ';'
 			{
-				string temp_funcao = gera_ID();
+				string temp_funcao = getID();
 
 				insere_tab_funcoes($2.variavel, {temp_funcao, $1.tipo, (int)parametros.size(), parametros, 0});
 				$$.traducao = "\n\n" + $1.tipo + " " + temp_funcao + "(";
@@ -216,6 +215,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 				desempilha_mapa();
 				declaracoes = "";
 			}
+			
 			;
 			
 COMANDOS	: COMANDO COMANDOS
@@ -231,33 +231,40 @@ COMANDOS	: COMANDO COMANDOS
 		
 DECLARACAO	: TIPO TK_ID
             {
-            	string temp_var = gera_ID();
+            	string temp_var = getID();
             	verifica_redeclaracao($2.variavel);
                 (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo};
                 $$.variavel = temp_var;
                 $$.traducao = "";
             }
             
-            | TIPO TK_ID TAM_DEC_VET
+            
+            //
+            
+            | TIPO TK_ID TK_TAM_VET
             {
-				string temp_var = gera_ID();
-            	verifica_redeclaracao($2.variavel);
-                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
-                tamanho_vetor.clear();
-                $$.variavel = temp_var;
-                $$.traducao = "";
+            	string temp_var = getID();
+				verifica_redeclaracao($2.variavel);
+				trata_tamanho($3.traducao);
+				vector<int> vet_tamanhos = trata_tamanho($3.traducao);
+				int tamanho = 1;
+				for(int i = 0; i < vet_tamanhos.size(); i++)
+					tamanho *= vet_tamanhos[i];
+				(*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, tamanho, vet_tamanhos};
+				$$.variavel = temp_var;
+				$$.traducao = "";
             }
             
             | TIPO TK_ID '=' E
             {
             	verifica_redeclaracao($2.variavel);
-				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, $4.tamanho};
+				(*pilhaDeMapas.front())[$2.variavel] = {getID(), $1.tipo, $4.tamanho};
                 $$.variavel = $2.variavel;//Pra Função
                 
                 if($1.tipo != $4.tipo) // então precisa fazer casting
                 {
                 	string tipo_cast = getTipo($1.tipo, "=", $4.tipo);
-                	string temp_cast = gera_ID();
+                	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
                 	$$.traducao = $4.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $4.variavel + ";\n";
                 	$$.traducao += "\t" + busca_no_mapa($2.variavel).nome + " = " + temp_cast + ";\n";
@@ -279,31 +286,12 @@ DECLARACAO	: TIPO TK_ID
 			
             ;
             
-TAM_DEC_VET	: TAM_DEC_VET_ '[' TK_NUM ']' 
-			{
-				tamanho_vetor.push_back($3.traducao);
-			}
-			
-			;
-			
-TAM_DEC_VET_: TAM_DEC_VET_ '[' TK_NUM ']'
-			{
-				tamanho_vetor.push_back($3.traducao);
-			}
-			
-			|
-			{
-				$$.traducao = "";
-			}
-
-			;
-            
 ATRIBUICAO	: TK_ID '=' E
 			{
 				if(busca_no_mapa($1.variavel).tipo != $3.tipo) // então precisa fazer casting
                 {
                 	string tipo_cast = getTipo($1.tipo, "=", $3.tipo);
-                	string temp_cast = gera_ID();
+                	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
                 	$$.traducao = $3.traducao + "\t" + temp_cast + " = " + "(" + tipo_cast + ")" + $3.variavel + ";\n";
                 	$$.traducao += "\t" + busca_no_mapa($1.variavel).nome + " = " + temp_cast + ";\n";
@@ -321,15 +309,13 @@ ATRIBUICAO	: TK_ID '=' E
 				}	
 			}
 			
-			| TK_ID TAM_VET '=' E
+			| TK_ID  '=' E
 			{
-				vector<string> pos = calcula_posicao_vetor($1.variavel);
-				struct info var = busca_no_mapa($1.variavel);
-				$$.traducao = $2.traducao;
-				$$.traducao += $4.traducao;
-				$$.traducao += pos[1];
-				$$.traducao += "\t" + busca_no_mapa($1.variavel).nome + "[" + pos[0] + "] = " + $4.variavel + ";\n";
-				tamanho_vetor.clear();
+			
+				// falta o casting, tirei pra não poluir
+
+				vector<string> pos = calcula_posicao_vetor($1.variavel, $2.traducao);
+				$$.traducao = $4.traducao + pos[1] + "\t" + busca_no_mapa($1.variavel).nome + "[" + pos[0] + "] = " + $4.variavel + ";\n";	
 			}
 			;
 			
@@ -370,7 +356,7 @@ COMANDO 	: E ';'
 			/* if */
 			| TK_IF '(' IF_WHILE_PARAM ')' COMANDO %prec IFX
 			{
-				string negacao_condicao = gera_ID();
+				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
 				string label_fim_else = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo}; // criando e adicionando a variável que vai guardar a negacao da condicao
@@ -383,7 +369,7 @@ COMANDO 	: E ';'
 			/* if else */
 			| TK_IF '(' IF_WHILE_PARAM ')' COMANDO TK_ELSE COMANDO
 			{
-				string negacao_condicao = gera_ID();
+				string negacao_condicao = getID();
 				string label_fim_if = geraLabel();
 				string label_fim_else = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $3.tipo}; // criando e adicionando a variável que vai guardar a negacao da condicao
@@ -397,7 +383,7 @@ COMANDO 	: E ';'
 			/* while */
 			| TK_WHILE ABRE_LACO '(' IF_WHILE_PARAM ')' COMANDO
 			{
-				string negacao_condicao = gera_ID();
+				string negacao_condicao = getID();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $4.tipo};
 				$$.traducao = "\n\t" + pilhaDeLabelsInicio.front() + ":\n" + $4.traducao + "\t" + negacao_condicao + " = !(" + $4.variavel + ");\n\tif(" + negacao_condicao + ") goto " + pilhaDeLabelsFim.front() + ";\n" + $6.traducao + "\tgoto " + pilhaDeLabelsInicio.front() + ";\n\n\t" + pilhaDeLabelsFim.front() + ":\n";
 				
@@ -414,7 +400,7 @@ COMANDO 	: E ';'
 			/* for */
 			| TK_FOR ABRE_LACO ABRE_ESCOPO '(' FOR_PARAM ';' FOR_PARAM ';' FOR_PARAM ')' COMANDO
 			{
-				string negacao_condicao = gera_ID();
+				string negacao_condicao = getID();
 				string label_inicio = geraLabel();
 				(*pilhaDeMapas.front())[negacao_condicao] = {negacao_condicao, $6.tipo};
 				
@@ -437,7 +423,7 @@ COMANDO 	: E ';'
 				
   				for(int i = 0; i < temporarias.size(); i++)
   				{
-  					string var_comparacao = gera_ID();
+  					string var_comparacao = getID();
   					string label_case = geraLabel();
   					(*pilhaDeMapas.front())[var_comparacao] = {var_comparacao, "unsigned short int"};
   					
@@ -540,13 +526,13 @@ E 			: '('E')'
 			
 			| E TK_SOMA_SUB E
 			{
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);
 
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = gera_ID();
+                	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
 					if($1.tipo != tipo_cast)
@@ -582,14 +568,14 @@ E 			: '('E')'
 			
 			| E TK_MULT_DIV E
 			{	
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				string tipo_retorno = getTipo($1.tipo, $2.traducao, $3.tipo);				
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, tipo_retorno};
 				
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-                	string temp_cast = gera_ID();
+                	string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, tipo_cast};
 					
 					if($1.tipo != tipo_cast)
@@ -612,7 +598,7 @@ E 			: '('E')'
 			
 			| TK_NEG E
 			{
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};		
 				$$.traducao = $2.traducao + "\t" + $$.variavel + " = !(" + $2.variavel + ");\n";
 			}			
@@ -621,7 +607,7 @@ E 			: '('E')'
 			
 			| TK_STRING
 			{	
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				$$.tamanho = (int) $1.traducao.length()-1;
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo, $$.tamanho}; // -2 para descontar as aspas
 				$$.traducao = "\tstrcpy(" + $$.variavel + ", " + $1.traducao  + ");\n";
@@ -629,8 +615,8 @@ E 			: '('E')'
 
 			| TK_ID TK_MM
 			{
-				string var_temp = gera_ID();
-				string var_soma = gera_ID();
+				string var_temp = getID();
+				string var_soma = getID();
 				string var_incremento = busca_no_mapa($1.variavel).nome;
 				char tipo_op = $2.traducao[0];
 				(*pilhaDeMapas.front())[var_temp] = {var_temp, "int"};
@@ -650,7 +636,7 @@ E 			: '('E')'
 			
 			| TK_ID TAM_VET
 			{
-				vector<string> pos = calcula_posicao_vetor($1.variavel);
+				vector<string> pos = calcula_posicao_vetor($1.variavel, $2.traducao); @here
 				struct info var = busca_no_mapa($1.variavel);
 				$$.variavel = var.nome + "[" + pos[0] + "]";
 				$$.traducao = $2.traducao;
@@ -661,19 +647,13 @@ E 			: '('E')'
 			}
 			
 			| CHAMADA_FC
-			;			
-			
-TAM_VET		: TAM_VET_ '[' E ']'
-			{
-				$$.traducao = $1.traducao + $3.traducao;
-				tamanho_vetor.push_back($3.variavel);
-			}
 			;
-			
-TAM_VET_	: TAM_VET_ '[' E ']'
+
+
+TAM_VET		: TAM_VET '[' E ']'
 			{
-				$$.traducao = $1.traducao + $3.traducao;			
-				tamanho_vetor.push_back($3.variavel);
+				$$.traducao = $3.traducao;
+				parametros_vetor.push_back[$3.variavel];
 			}
 			
 			|
@@ -703,7 +683,7 @@ CHAMADA_FC	: TK_ID '(' F_PARAMS ')'
 					
 				else
 				{   	
-			       	$$.variavel = gera_ID();
+			       	$$.variavel = getID();
 					(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $$.tipo};
 			        $$.traducao = $3.traducao + "\t" + $$.variavel + " = " + busca_funcao($1.variavel).nome + "(";
 				}
@@ -724,21 +704,21 @@ TIPO		: TK_TIPO_INT | TK_TIPO_REAL | TK_TIPO_CHAR | TK_TIPO_STRING | TK_TIPO_BOO
 
 VALOR		: TK_NUM 
 			{
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
 			| TK_REAL
 			{
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
 			
 			| TK_CHAR
 			{
-				$$.variavel = gera_ID();
+				$$.variavel = getID();
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, $1.tipo};					
 				$$.traducao = "\t" + $$.variavel + " = " + $1.traducao + ";\n";
 			}
@@ -760,13 +740,13 @@ OPERACAO    : '(' OPERACAO ')'
             
             | E OPERANDO E
             {	            	
-				$$.variavel = gera_ID();			
+				$$.variavel = getID();			
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
 				
 				if($1.tipo != $3.tipo) // então precisa casting
 				{
 					string tipo_cast = getTipo($1.tipo, $2.traducao , $3.tipo);
-					string temp_cast = gera_ID();
+					string temp_cast = getID();
                 	(*pilhaDeMapas.front())[temp_cast] = {temp_cast, "unsigned short int"};
                 	
 					if($1.tipo != tipo_cast)
@@ -790,7 +770,7 @@ OPERACAO    : '(' OPERACAO ')'
 			
 			| OPERACAO TK_OP_IGUALDADE OPERACAO
 			{
-			    $$.variavel = gera_ID();			
+			    $$.variavel = getID();			
 				(*pilhaDeMapas.front())[$$.variavel] = {$$.variavel, "unsigned short int"};
 				
 				$$.tipo = "unsigned short int";
@@ -826,7 +806,7 @@ void yyerror( string MSG )
 	exit (0);
 }
 
-string gera_ID()
+string getID()
 {
 	static int i = 0;
 
@@ -975,7 +955,12 @@ void getDeclaracoes(mapa* mapa_variaveis)
 			ss << "\t" << "CHAVE COM ERRO:" << iterator->first << ";\n";
 			
 		if(iterator->second.tipo == "string") // imprime string como vetor de char
-			ss << "\t" << "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
+		{
+			/*if(iterator->second.tamanho == 0)
+				ss << "\t" << "char " << iterator->second.nome << "[1000];\n";
+			else */
+				ss << "\t" << "char " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
+		}
 		
 		else if(iterator->second.tamanho_vet.size() != 0) // imprime tamanho do vetor
 			ss << "\t" << iterator->second.tipo << " " << iterator->second.nome << "[" << iterator->second.tamanho << "];\n";
@@ -1097,6 +1082,62 @@ void insere_tab_funcoes(string nome, struct info_funcao info)
 	tab_funcoes[nome_args] = info;
 }
 
+vector<string> trata_tamanho(string tamanhos)
+{
+	for(int i = 0; i < tamanhos.length(); i++)
+		if(tamanhos[i] == '[' || tamanhos[i] == ']')
+			tamanhos[i] = ' ';
+			
+	istringstream iss(tamanhos);
+	vector<string> valores;
+	copy(istream_iterator<string>(iss),
+         istream_iterator<string>(),
+         back_inserter<vector<string> >(valores));
+
+	return valores;
+}
+
+vector<string> calcula_posicao_vetor(string vetor_declarado, string tamanho)
+{
+	vector<string> tamanhos_chamada = parametros_vetor;
+	vector<int> tamanhos_declaracao = busca_no_mapa(vetor_declarado).tamanho_vet;
+	vector<string> retorno;
+	string traducao = "";
+	
+	string temp_aux = getID();
+	(*pilhaDeMapas.front())[temp_aux] = {temp_aux, "int"};
+	
+	string temp_pos = getID();
+	(*pilhaDeMapas.front())[temp_pos] = {temp_pos, "int"};
+	
+	string temp_aux2 = getID();
+	(*pilhaDeMapas.front())[temp_aux2] = {temp_aux2, "int"};
+	
+	traducao += "\t" + temp_pos + " = 0;\n";
+	
+	int aux, pos = 0;
+	
+	for(int i = 0; i < tamanhos_declaracao.size(); i++)
+	{
+		//aux = tamanhos_chamada[i];
+		traducao += "\t" + temp_aux + " = " + tamanhos_chamada[i] + ";\n";
+		
+		for(int j = (tamanhos_declaracao.size() - 1); j > i; j--)
+		{
+			//aux *= tamanhos_declaracao[j];
+			traducao += "\t" + temp_aux2 + " = " + to_string(tamanhos_declaracao[j]) + ";\n"; 
+			traducao += "\t" + temp_aux + " = " + temp_aux + " * " + temp_aux2 + ";\n";
+		}
+		
+		//pos += aux;
+		traducao += "\t" + temp_pos + " = " + temp_pos + " + " + temp_aux + ";\n";
+	}
+	
+	retorno.push_back(temp_pos);
+	retorno.push_back(traducao);
+	
+	return retorno;
+}
 
 void verifica_parametros_funcao()
 {
@@ -1156,56 +1197,6 @@ void atualiza_tamanho_string(string nome, int tamanho)
 			res->second.tamanho = tamanho;
 			break;
 		}
-}
-
-int get_tamanho_vetor(vector<string> vetor)
-{
-	int tam = 1;
-	for(int i = 0; i < vetor.size(); i++)
-		tam *= atoi(vetor[i].c_str());
-	return tam;
-}
-
-vector<string> calcula_posicao_vetor(string vetor_declarado)
-{
-	vector<string> tamanhos_chamada = tamanho_vetor;
-	vector<string> tamanhos_declaracao = busca_no_mapa(vetor_declarado).tamanho_vet;
-	vector<string> retorno;
-	string traducao = "";
-	
-	string temp_aux = gera_ID();
-	(*pilhaDeMapas.front())[temp_aux] = {temp_aux, "int"};
-	
-	string temp_pos = gera_ID();
-	(*pilhaDeMapas.front())[temp_pos] = {temp_pos, "int"};
-	
-	string temp_aux2 = gera_ID();
-	(*pilhaDeMapas.front())[temp_aux2] = {temp_aux2, "int"};
-	
-	traducao += "\t" + temp_pos + " = 0;//83\n";
-	
-	//int aux, pos = 0; @here
-	
-	for(int i = 0; i < tamanhos_declaracao.size(); i++)
-	{
-		//aux = tamanhos_chamada[i];
-		traducao += "\t" + temp_aux + " = " + tamanhos_chamada[i] + ";//1190\n";
-		
-		for(int j = (tamanhos_declaracao.size() - 1); j > i; j--)
-		{
-			//aux *= tamanhos_declaracao[j];
-			traducao += "\t" + temp_aux2 + " = " + tamanhos_declaracao[j] + ";//95\n"; 
-			traducao += "\t" + temp_aux + " = " + temp_aux + " * " + temp_aux2 + ";//96\n";
-		}
-		
-		//pos += aux;
-		traducao += "\t" + temp_pos + " = " + temp_pos + " + " + temp_aux + ";//1200\n";
-	}
-	
-	retorno.push_back(temp_pos);
-	retorno.push_back(traducao);
-	
-	return retorno;
 }
 
 /*

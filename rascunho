@@ -1,0 +1,11 @@
+
+	print("meu vetor:\n");
+	for(i=0; i<10; i++)
+	{
+		print(vet[i]);
+		print(" ");
+	}
+	
+	
+REGRA LÉXICA
+(\[({NUM}|{ID})+\])+	{ yylval.traducao = yytext; return TK_TAM_VET; }

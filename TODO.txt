@@ -2,9 +2,7 @@
 
 * casting
 * incremento/decremento
-* correção tamanho de string (declarada em outro escopo)
 * concatenações (string + int...)
-
 
 =============== DONE ===============
 

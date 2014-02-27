@@ -45,8 +45,6 @@ COMENTARIO ("//"[^\n]*)|("/*"[^"*/"]*"*/")
 "string"	{yylval.tipo = "string"; return TK_TIPO_STRING;}
 "boolean"	{yylval.tipo = "unsigned short int"; return TK_TIPO_INT;}
 
-(\[{NUM}\])+	{ yylval.traducao = yytext; return TK_TAM_VET; }
-
 [(){}[\];,=]	{ return *yytext; }
 
 
