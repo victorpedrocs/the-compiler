@@ -83,6 +83,7 @@ vector<string> tamanho_vetor;
 list<mapa*> pilhaDeMapas;
 list<string> pilhaDeLabelsInicio;
 list<string> pilhaDeLabelsFim;
+string atribuicoes_globais = "";
 
 
 
@@ -111,7 +112,7 @@ S			: ABRE_ESCOPO CODIGOS
 			{
 				desempilha_mapa();
 				verifica_chamadas_pendentes();
-				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n#include<string>\n#include <stdio.h>\nusing namespace std;" << declaracoes << $2.traducao << endl;
+				cout << "/*Compilador C'*/" << "\n#include <iostream>\n#include <string.h>\n#include<string>\n#include <stdio.h>\n\nusing namespace std;\n\n" << declaracoes << $2.traducao << endl;
 			}
 			;
 			
@@ -126,10 +127,50 @@ CODIGOS		: CODIGO CODIGOS
 			}
 			;
 			
-CODIGO		: DECLARACAO ';'
+CODIGO		: DECLARACAO_GLOBAL ';'
 			
 			| FUNCAO
 			;
+			
+DECLARACAO_GLOBAL:	TIPO TK_ID
+            {
+            	string temp_var = gera_ID();
+            	verifica_redeclaracao($2.variavel);
+                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo};
+                $$.variavel = temp_var;
+                $$.traducao = "";
+            }
+            
+            | TIPO TK_ID TAM_DEC_VET
+            {
+				string temp_var = gera_ID();
+            	verifica_redeclaracao($2.variavel);
+                (*pilhaDeMapas.front())[$2.variavel] = {temp_var, $1.tipo, get_tamanho_vetor(tamanho_vetor), tamanho_vetor};
+                tamanho_vetor.clear();
+                $$.variavel = temp_var;
+                $$.traducao = "";
+            }
+            
+            | TIPO TK_ID '=' E
+            {
+            	verifica_redeclaracao($2.variavel);
+				(*pilhaDeMapas.front())[$2.variavel] = {gera_ID(), $1.tipo, $4.tamanho};
+                $$.traducao = "";
+                
+                //CASTING
+                
+                if(busca_no_mapa($2.variavel).tipo == "string")
+				{
+					atribuicoes_globais += $4.traducao + "\tstrcpy(" + busca_no_mapa($2.variavel).nome + ", " + $4.variavel + ");\n";
+					atualiza_tamanho_string($2.variavel, $4.tamanho);
+				}
+			
+				else
+					atribuicoes_globais += $4.traducao + "\t" + busca_no_mapa($2.variavel).nome + " = " + $4.variavel + ";\n";
+
+            }
+			
+            ;
 			
 BLOCO		: '{' ABRE_ESCOPO COMANDOS '}'
 			{
@@ -196,6 +237,7 @@ FUNCAO		: TIPO TK_ID ABRE_ESCOPO '(' F_PARAMS_DEC ')' BLOCO
 				$$.traducao += imprime_parametros_funcao();
 				$$.traducao += ")\n{\n";
 				$$.traducao += declaracoes;
+				$$.traducao += atribuicoes_globais;
 				$$.traducao += $7.traducao + "}";
 				
 				
@@ -869,7 +911,7 @@ string gera_ID()
 	static int i = 0;
 
 	stringstream ss;
-	ss << "$temp" << i++;
+	ss << "_$temp" << i++;
 	
 	return ss.str();
 }
