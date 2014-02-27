@@ -1,25 +1,28 @@
 /*Compilador C'*/
 #include <iostream>
 #include <string.h>
-
+#include<string>
+#include <stdio.h>
 using namespace std;
 
 int main()
 {
 	int $temp0;
 	char $temp2[4];
-	char $temp3[6];
-	char $temp4[0];
-	int $temp6;
+	char $temp3[104];
+	char $temp4[104];
+	char $temp5[0];
+	int $temp7;
 	int $temp1;
-	char $temp5[6];
+	char $temp6[104];
 	$temp0 = 10;
 	$temp1 = $temp0;
 	strcpy($temp2, "alo");
+	sprintf($temp4, "%d",$temp1);
 	strcpy($temp3, $temp2);
-	strcat($temp3, "10");
-	strcpy($temp5, $temp3);
-	cout << $temp5;
-	$temp6 = 0;
-	return $temp6;
+	strcat($temp3, $temp4);
+	strcpy($temp6, $temp3);
+	cout << $temp6;
+	$temp7 = 0;
+	return $temp7;
 }
