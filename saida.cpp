@@ -7,20 +7,20 @@ using namespace std;
 
 int main()
 {
-	float $temp0;
-	char $temp2[4];
+	char $temp0;
+	char $temp3[100];
 	char $temp4[100];
 	char $temp5[100];
 	int $temp7;
-	float $temp1;
-	char $temp6[100];
-	$temp0 = 10.493;
+	char $temp1;
+	char $temp6[0];
+	$temp0 = 'K';
 	$temp1 = $temp0;
-	strcpy($temp2, "ola");
-	sprintf($temp5, "%g",$temp1);
-	strcpy($temp4, $temp5);
-	strcat($temp4, $temp2);
-	strcpy($temp6, $temp4);
+	sprintf($temp4, "%c",$temp1);
+	sprintf($temp5, "%c",$temp1);
+	strcpy($temp3, $temp4);
+	strcat($temp3, $temp5);
+	strcpy($temp6, $temp3);
 	cout << $temp6;
 	$temp7 = 0;
 	return $temp7;

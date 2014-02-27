@@ -1,9 +1,8 @@
 
 int main()
 {
-	float a = 10.493;
-	string b = a + "ola";
-	//a = 13;
+	char a = 'K';
+	string b = a + a;
 	print(b);
 
 	return 0;
